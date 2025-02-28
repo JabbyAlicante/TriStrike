@@ -33,23 +33,28 @@
     <div id="game-section" style="display: none;">
         <h2>Time Left: <span id="timer">59</span> seconds</h2>
         <h2>Winning Number: <span id="number">Waiting...</span></h2>
+        <h3>Balance: <span id="balance">Loading...</span> coins</h3>
+        <h3>Prize: <span id="prize"></span>Loading</h3>
+        <button onclick="placeBet()">Place Bet (20 coins)</button>
+        <p id="bet-message"></p>
+
     </div>
 
     <script>
         const socket = io("http://localhost:3000");
-
+    
         function signup() {
             const username = document.getElementById("signup-username").value;
             const email = document.getElementById("signup-email").value;
             const password = document.getElementById("signup-password").value;
-
+    
             socket.emit("signup", { username, email, password });
-
+    
             socket.on("signup_response", (response) => {
                 document.getElementById("signup-message").textContent = response.message;
             });
         }
-
+    
         function login() {
             const username = document.getElementById("login-username").value;
             const password = document.getElementById("login-password").value;
@@ -58,13 +63,17 @@
 
             socket.on("login_response", (response) => {
                 if (response.success) {
-                    document.getElementById("login-message").textContent = `Welcome, ${response.user.username}! Balance: ${response.user.balance} coins`;
+                    document.getElementById("login-message").textContent = `Welcome, ${response.user.username}!`;
+                    document.getElementById("balance").textContent = response.user.balance; // Show balance
 
                     document.getElementById("signup-section").style.display = "none";
                     document.getElementById("login-section").style.display = "none";
-
                     document.getElementById("game-section").style.display = "block";
 
+                    // ✅ Request prize pool immediately after login
+                    socket.emit("show_prize_pool", {});
+
+                    // ✅ Update game state properly
                     socket.on("game_update", (data) => {
                         document.getElementById("timer").textContent = data.timer;
                         document.getElementById("number").textContent = data.winningNumber;
@@ -74,6 +83,34 @@
                 }
             });
         }
+
+        function placeBet() {
+            const balance = parseInt(document.getElementById("balance").textContent);
+            
+            if (balance < 20) {
+                document.getElementById("bet-message").textContent = "❌ Not enough coins!";
+                return;
+            }
+
+            socket.emit("place_bet", { numbers: [1, 2, 3] });
+
+            socket.on("game_result", (response) => {
+                document.getElementById("bet-message").textContent = response.message;
+            });
+        }
+
+    
+        // ✅ Update the displayed prize pool dynamically
+        socket.on("prize_pool_response", (data) => {
+            if (data.success) {
+                document.getElementById("prize").textContent = data.totalPrize + " coins";
+            } else {
+                document.getElementById("prize").textContent = "Error fetching prize pool";
+            }
+        });
+
+    
     </script>
+    
 </body>
 </html>

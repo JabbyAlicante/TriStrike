@@ -1,6 +1,9 @@
-import db from "../config/db.js"; 
+import db from "../config/db.js";
+import bcrypt from "bcrypt";
 
-// 🔹 sign up
+const saltRounds = 10;
+
+//Sign up
 export const signupUser = (username, email, password, callback) => {
     const checkUserQuery = "SELECT id FROM users WHERE username = ? OR email = ?";
     const insertUserQuery = "INSERT INTO users (username, email, pass_hash, balance) VALUES (?, ?, ?, 100)";
@@ -12,24 +15,40 @@ export const signupUser = (username, email, password, callback) => {
             return callback(null, { success: false, message: "Username or email already exists" });
         }
 
-        db.query(insertUserQuery, [username, email, password], (err, result) => {
+        // Hash pass
+        bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
             if (err) return callback(err, null);
-            return callback(null, { success: true, message: "User registered successfully!" });
+
+            db.query(insertUserQuery, [username, email, hashedPassword], (err, result) => {
+                if (err) return callback(err, null);
+                return callback(null, { success: true, message: "User registered successfully!" });
+            });
         });
     });
 };
 
-// 🔹 login
+// 🔹 Login
 export const loginUser = (username, password, callback) => {
-    const query = "SELECT id, username, email, balance FROM users WHERE username = ? AND pass_hash = ?";
+    const query = "SELECT id, username, email, pass_hash, balance FROM users WHERE username = ?";
 
-    db.query(query, [username, password], (err, results) => {
+    db.query(query, [username], (err, results) => {
         if (err) return callback(err, null);
 
-        if (results.length > 0) {
-            return callback(null, { success: true, user: results[0] }); 
-        } else {
+        if (results.length === 0) {
             return callback(null, { success: false, message: "Invalid username or password" });
         }
+
+        const user = results[0];
+
+        bcrypt.compare(password, user.pass_hash, (err, isMatch) => {
+            if (err) return callback(err, null);
+
+            if (isMatch) {
+                delete user.pass_hash;
+                return callback(null, { success: true, user });
+            } else {
+                return callback(null, { success: false, message: "Invalid username or password" });
+            }
+        });
     });
 };
