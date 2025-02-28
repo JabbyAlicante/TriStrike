@@ -1,30 +1,35 @@
-import db from "../config/db.js";
-import bcrypt from "bcrypt";
+import db from "../config/db.js"; 
 
-export async function registerUser({ username, password }) {
-    console.log("Attempting to register:", username);
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await db.query("INSERT INTO users (username, pass_hash, balance) VALUES (?, ?, 100)", [username, hashedPassword]);
-        return { success: true, message: "Registration successful!", balance: 100 };
-    } catch (error) {
-        console.error(error);
-        return { success: false, message: "Error registering user" };
-    }
-}
+// 🔹 sign up
+export const signupUser = (username, email, password, callback) => {
+    const checkUserQuery = "SELECT id FROM users WHERE username = ? OR email = ?";
+    const insertUserQuery = "INSERT INTO users (username, email, pass_hash, balance) VALUES (?, ?, ?, 100)";
 
-export async function loginUser({ username, password }) {
-    try {
-        const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [username]);
-        if (rows.length === 0) return { success: false, message: "Invalid credentials" };
+    db.query(checkUserQuery, [username, email], (err, results) => {
+        if (err) return callback(err, null);
 
-        const user = rows[0];
-        const isMatch = await bcrypt.compare(password, user.pass_hash);
-        if (!isMatch) return { success: false, message: "Invalid credentials" };
+        if (results.length > 0) {
+            return callback(null, { success: false, message: "Username or email already exists" });
+        }
 
-        return { success: true, message: "Login successful!", balance: user.balance, user };
-    } catch (error) {
-        console.error(error);
-        return { success: false, message: "Server error" };
-    }
-}
+        db.query(insertUserQuery, [username, email, password], (err, result) => {
+            if (err) return callback(err, null);
+            return callback(null, { success: true, message: "User registered successfully!" });
+        });
+    });
+};
+
+// 🔹 login
+export const loginUser = (username, password, callback) => {
+    const query = "SELECT id, username, email, balance FROM users WHERE username = ? AND pass_hash = ?";
+
+    db.query(query, [username, password], (err, results) => {
+        if (err) return callback(err, null);
+
+        if (results.length > 0) {
+            return callback(null, { success: true, user: results[0] }); 
+        } else {
+            return callback(null, { success: false, message: "Invalid username or password" });
+        }
+    });
+};

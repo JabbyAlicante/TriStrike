@@ -1,37 +1,40 @@
+import { checkGameResults } from "./betsService.js";
 import db from "../config/db.js";
 
-let gameState = { timeLeft: 59, winning_num: null, prizePool: 20 };
-let gameTimerStarted = false; // Prevent multiple timers
+let timer = 59;
+let winningNumber = generateWinningNumber(); 
 
 export function startGameService(io) {
-    if (gameTimerStarted) return; // Prevent duplicate timers
-    gameTimerStarted = true;
+    function gameRound() {
+        if (timer > 0) {
+            timer--;
+            io.emit("game_update", { timer, winningNumber });
+            setTimeout(gameRound, 1000);
+        } else {
+            
+            timer = 59;
+            winningNumber = generateWinningNumber();
+            console.log(":)))) New Winning Number:", winningNumber);
 
-    setInterval(async () => {
-        gameState.timeLeft -= 1;
-        console.log(`Game timer: ${gameState.timeLeft}s remaining`);
+            // Save the winning number to db
+            db.query(`INSERT INTO games (winning_num) VALUES (?)`, [winningNumber], (err, result) => {
+                if (err) console.error("❌ Database error:", err);
+                else checkGameResults(result.insertId, winningNumber);
+            });
 
-        if (gameState.timeLeft <= 0) {
-            gameState.winning_num = Math.floor(Math.random() * 10);
-            gameState.timeLeft = 59;
-
-            console.log(`New Game! Winning Number: ${gameState.winning_num}`);
-
-            try {
-                await db.query(
-                    "INSERT INTO games (winning_num, prize_pool) VALUES (?, ?)", 
-                    [gameState.winning_num, gameState.prizePool]
-                );
-                console.log("Game round saved to database.");
-            } catch (error) {
-                console.error("Database insert error:", error);
-            }
+            //broadcast to server
+            io.emit("game_update", { timer, winningNumber });
+            setTimeout(gameRound, 1000);
         }
+    }
 
-        io.emit("game_update", gameState);
-    }, 1000); 
+    gameRound(); 
 }
 
 export function getGameState() {
-    return gameState;
+    return { timer, winningNumber };
+}
+
+function generateWinningNumber() {
+    return Math.floor(Math.random() * 9) + 1; 
 }
