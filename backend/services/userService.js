@@ -1,7 +1,20 @@
 import db from "../config/db.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const saltRounds = 10;
+const JWT_SECRET =  process.env.JWT_SECRET || "12345";
+
+const generateToken = (user) => {
+    return jwt.sign(
+        { id: user.id, username: user.username },
+        JWT_SECRET,
+        { expiresIn: "2hrs" }
+    );
+};
 
 //Sign up
 export const signupUser = (username, email, password, callback) => {
@@ -45,10 +58,27 @@ export const loginUser = (username, password, callback) => {
 
             if (isMatch) {
                 delete user.pass_hash;
-                return callback(null, { success: true, user });
+                const token = generateToken(user);
+                return callback(null, { success: true, user, token });
             } else {
                 return callback(null, { success: false, message: "Invalid username or password" });
             }
         });
     });
 };
+
+export const verifyToken = (token, callback) => {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+            if (err.name === "TokenExpiredError") {
+                console.error("❌ Token expired.");
+                return callback(null, "expired");
+            }
+            console.error("❌ Token verification failed:", err.message);
+            return callback(null);
+        }
+        console.log("✅ Token verified successfully:", decoded);
+        return callback(decoded);
+    });
+};
+

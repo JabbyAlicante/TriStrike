@@ -1,8 +1,5 @@
 import db from "../config/db.js";
 
-/**
- * Get the total prize pool for a game
- */
 export function getTotalPrizePool(gameId, callback) {
     db.query(`SELECT prize_pool FROM games WHERE id = ?`, [gameId], (err, results) => {
         if (err) {

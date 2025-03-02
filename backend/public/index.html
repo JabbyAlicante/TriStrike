@@ -34,7 +34,7 @@
         <h2>Time Left: <span id="timer">59</span> seconds</h2>
         <h2>Winning Number: <span id="number">Waiting...</span></h2>
         <h3>Balance: <span id="balance">Loading...</span> coins</h3>
-        <h3>Prize: <span id="prize"></span>Loading</h3>
+        <h3>Prize: <span id="prize">Loading</span></h3>
         <button onclick="placeBet()">Place Bet (20 coins)</button>
         <p id="bet-message"></p>
 
@@ -54,6 +54,30 @@
                 document.getElementById("signup-message").textContent = response.message;
             });
         }
+
+        function authenticateUser() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.warn("🔹 No token found, user must log in.");
+                return;
+            }
+
+            socket.emit("authenticate", token);
+            console.log("🔹 Stored Token:", localStorage.getItem("token"));
+
+
+            socket.on("auth_success", (response) => {
+                console.log("✅ Authentication successful:", response.message);
+            });
+
+            socket.on("auth_failed", (response) => {
+                console.error("❌ Authentication failed:", response.message);
+                localStorage.removeItem("token");
+                alert("Session expired. Please log in again.");
+                window.location.reload(); 
+            });
+        }
+
     
         function login() {
             const username = document.getElementById("login-username").value;
@@ -69,9 +93,10 @@
                     document.getElementById("signup-section").style.display = "none";
                     document.getElementById("login-section").style.display = "none";
                     document.getElementById("game-section").style.display = "block";
+                    
+                    localStorage.setItem("token", response.token);
 
-                    // ✅ Request prize pool immediately after login
-                    socket.emit("show_prize_pool", {});
+                    authenticateUser();
 
                     // ✅ Update game state properly
                     socket.on("game_update", (data) => {
@@ -94,12 +119,19 @@
 
             socket.emit("place_bet", { numbers: [1, 2, 3] });
 
+            socket.on("update_balance",(response) => {
+                document.getElementById("balance").textContent = response.balance;
+            });
+
+            socket.on("prize_pool_response", (response) => {
+                document.getElementById("prize").textContent = response.message;
+            });
+
             socket.on("game_result", (response) => {
                 document.getElementById("bet-message").textContent = response.message;
             });
         }
 
-    
         // ✅ Update the displayed prize pool dynamically
         socket.on("prize_pool_response", (data) => {
             if (data.success) {
@@ -108,6 +140,48 @@
                 document.getElementById("prize").textContent = "Error fetching prize pool";
             }
         });
+
+        window.onload = () => {
+            const token = localStorage.getItem("token");
+            if (token) {
+                console.log("🔹 Sending token for authentication...");
+                socket.emit("authenticate",  token );
+            } else {
+                console.log("🔹 No token found, user must log in.");
+            }
+        };
+
+        // ✅ Handle authentication response
+        socket.on("auth_response", (response) => {
+            if (response.success) {
+                console.log("✅ Authentication successful:", response.user.username);
+                document.getElementById("balance").textContent = response.user.balance;
+                document.getElementById("game-section").style.display = "block";
+                document.getElementById("signup-section").style.display = "none";
+                document.getElementById("login-section").style.display = "none";
+            } else {
+                console.log("❌ Authentication failed:", response.message);
+                localStorage.removeItem("token");
+                document.getElementById("login-message").textContent = response.message;
+            }
+        });
+
+
+        // ✅ Handle logout
+        socket.on("logout_response", (response) => {
+            console.log("✅ Logout:", response.message);
+            localStorage.removeItem("token");
+            window.location.reload();
+        });
+
+        function logout() {
+            console.log("🔹 Logging out...");
+            socket.emit("logout");
+        }
+
+
+
+        
 
     
     </script>

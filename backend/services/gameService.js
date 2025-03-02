@@ -9,9 +9,9 @@ export function startGameService(io) {
         if (timer > 0) {
             timer--;
             io.emit("game_update", { timer, winningNumber });
-            console.log(`🕒 Timer: ${timer}`); // NEW LOG
+            console.log(`🕒 Timer: ${timer}`);
         } else {
-            console.log("⏳ Timer reached 0. Creating new game..."); // NEW LOG
+            console.log("⏳ Timer reached 0. Creating new game...");
             timer = 59;
             winningNumber = generateWinningNumber();
         

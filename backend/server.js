@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { startGameService, getGameState } from "./services/gameService.js";
-import { signupUser, loginUser } from "./services/userService.js";
+import { signupUser, loginUser, verifyToken } from "./services/userService.js";
 import { placeBet, checkGameResults } from "./services/betsService.js";
 import { getUserBalance } from "./services/balanceService.js";
 import { getTotalPrizePool, updatePrizePool } from "./services/prizeService.js";
@@ -78,6 +78,28 @@ io.on("connection", (socket) => {
         });
     });
 
+    socket.on("authenticate", (token) => {
+        if (!token || typeof token !== "string") {
+            console.error("❌ Invalid token format received:", token);
+            socket.emit("auth_response", { success: false, message: "Invalid token format. Please log in again." });
+            return;
+        }
+        
+        verifyToken(token, (decodedUser, error) => {
+            if (error === "expired") {
+                socket.emit("auth_response", { success: false, message: "Session expired. Please log in again." });
+                return;
+            }
+    
+            if (decodedUser) {
+                socket.emit("auth_response", { success: true, user: decodedUser, message: "Authentication successful" });
+            } else {
+                socket.emit("auth_response", { success: false, message: "Invalid Token" });
+            }
+        });
+    });
+    
+
     // PLACE BET
     socket.on("place_bet", (data) => {
         const user = activeUsers.get(socket.id);
@@ -112,8 +134,9 @@ io.on("connection", (socket) => {
                     });
 
                     getTotalPrizePool(currentGameState.gameId, (totalPrize) => {
-                        io.emit("prize_pool_response", { success: true, totalPrize });
                         console.log("💰 Updated Prize Pool:", totalPrize);
+                        io.emit("prize_pool_response", { success: true, totalPrize });
+                        
                     });
 
                     getUserBalance(user.id, (err, newBalance) => {
@@ -128,11 +151,20 @@ io.on("connection", (socket) => {
     });
 
     // GET RESULTS
+
+    let lastCheckGameId = null;
     socket.on("get_results", () => {
         getGameState((currentGameState) => {
             if (!currentGameState || !currentGameState.gameId) {
                 return socket.emit("game_result", { success: false, message: "No active game round" });
             }
+
+            if (lastCheckGameId == currentGameState.gameId) {
+                console.log("Done checking result for this game");
+                return;
+            }
+
+            lastCheckGameId = currentGameState.gameId;
 
             console.log("🔍 Checking results for gameId:", currentGameState.gameId);
             checkGameResults(currentGameState.gameId, currentGameState.winningNumber, io, (winners) => {
@@ -146,6 +178,12 @@ io.on("connection", (socket) => {
                 }
             });
         });
+    });
+
+    socket.on("logout", () => {
+        activeUsers.delete(socket.id);
+        socket.emit("logout_response", { success: true, message: "logged out success"});
+        socket.disconnect(true);
     });
 
     socket.on("disconnect", () => {
