@@ -1,0 +1,148 @@
+@import url('https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Playfair+Display:wght@400;700&display=swap');
+
+/* 
+font-family: 'Marcellus SC', serif;
+font-family: 'Playfair Display', serif;
+ */
+
+/* color scheme
+color: #0A0614; // background
+
+color: #281858 // purple medium
+color: #301D6C //purple light - shadow, text when bg yellow
+
+color: #CEA63A // gold
+color: #FFCF6B //yellow/gold - shadow
+color: #E9BD65 // gold : button
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #0A0614;
+}
+
+#landing-id {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.landing-container {
+  background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741097142/TriStrike_Backgrounds_c5lgsn.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.horo-wheel {
+  position: absolute;
+  top: 50vh; 
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  width: 100%;
+  height: 60vh; 
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; 
+  overflow: hidden; 
+  top: 40px;
+}
+
+.horo-wheel img {
+  width: auto;
+  max-width: 130%;
+  height: auto;
+  transform: translateY(50%) rotate(180deg); 
+  animation: spin 70s linear infinite; 
+  filter: drop-shadow(0px 4px 20px #FFCF6B);
+}
+
+
+.card-logo {
+  width: 245px;
+  height: 245px;
+  overflow: hidden;
+  position: absolute;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  top: 150px;
+}
+
+.card-logo img {
+  width: 100%;
+  height: 100%;
+}
+
+
+.welcome-title {
+  position: relative;
+  width: 100%;
+  height: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.welcome-title .tri, .welcome-title .strike {
+  position: absolute;
+  width: 100%;
+  height: auto;
+  top: 0;
+}
+
+.welcome-title .tri {
+  right: 0;
+  clip-path: inset(0 66% 0 0); 
+  filter: drop-shadow(2px 2px 2px #301D6C);
+}
+
+.welcome-title .strike {
+  left: 0;
+  clip-path: inset(0 0 0 35%); 
+  filter: drop-shadow(2px 2px 2px #FFCF6B);
+}
+
+.welcome-title img {
+  width: 100%; 
+  height: auto;
+}
+
+.play-button {
+  width: 100%;
+  bottom: 25px;
+  position: absolute;
+}
+
+.play-start {
+  width: 7rem;
+  height: 2.5rem;
+  background-color: #0A0614;
+  border: 2px solid #301D6C;
+  border-radius: 11px;
+  filter: drop-shadow(1px 1px 2px #301D6C);
+
+  font-family: 'Marcellus SC', serif;
+  color: #E9BD65;
+  font-size: 22px;
+}
+
+
+
+
+@keyframes spin {
+  from {
+    transform: rotate(180deg);
+  }
+  to {
+    transform: rotate(540deg); 
+  }
+}
