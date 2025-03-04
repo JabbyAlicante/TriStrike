@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dd5ewn4aw/image/upload/v1740371503/bingoicon/kgdusino4vlzwr7d5kw2.png">
     <title>Tristrike</title>
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body>
     <h1>Tristrike Game</h1>
 
-    <!-- Signup Section -->
     <div id="signup-section">
         <h3>Signup</h3>
         <input type="text" id="signup-username" placeholder="Username">
@@ -20,7 +18,6 @@
         <p id="signup-message"></p>
     </div>
 
-    <!-- Login Section -->
     <div id="login-section">
         <h3>Login</h3>
         <input type="text" id="login-username" placeholder="Username">
@@ -29,162 +26,110 @@
         <p id="login-message"></p>
     </div>
 
-    <!-- Game UI (Hidden by Default) -->
-    <div id="game-section" style="display: none;">
-        <h2>Time Left: <span id="timer">59</span> seconds</h2>
-        <h2>Winning Number: <span id="number">Waiting...</span></h2>
-        <h3>Balance: <span id="balance">Loading...</span> coins</h3>
-        <h3>Prize: <span id="prize">Loading</span></h3>
-        <button onclick="placeBet()">Place Bet (20 coins)</button>
-        <p id="bet-message"></p>
+    <div id="main-section" style="display: none;">
+        <h2>Welcome, <span id="user-name"></span>!</h2>
+        <button onclick="logout()">Logout</button>
 
+        <div id="game-section" style="display: none;">
+            <h2>Game Status</h2>
+            <p>⏳ Timer: <span id="game-timer">--</span> seconds</p>
+            <p>🏆 Winning Number: <span id="winning-number">--</span></p>
+        </div>
+        
     </div>
 
     <script>
         const socket = io("http://localhost:3000");
-    
+
         function signup() {
             const username = document.getElementById("signup-username").value;
             const email = document.getElementById("signup-email").value;
             const password = document.getElementById("signup-password").value;
-    
+
+            console.log(`📌 Sending signup request - Username: ${username}, Email: ${email}`);
+
             socket.emit("signup", { username, email, password });
-    
+
             socket.on("signup_response", (response) => {
+                console.log("📩 Signup response:", response);
                 document.getElementById("signup-message").textContent = response.message;
             });
         }
 
-        function authenticateUser() {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.warn("🔹 No token found, user must log in.");
-                return;
-            }
+        // Listen for game updates from the server
+        socket.on("game_update", (data) => {
+            console.log("🎮 Game Update Received:", data);
 
-            socket.emit("authenticate", token);
-            console.log("🔹 Stored Token:", localStorage.getItem("token"));
+            // Update UI with received game state
+            document.getElementById("game-timer").textContent = data.timer;
+            document.getElementById("winning-number").textContent = data.winningNumber;
+
+            // Show the game section if it's not visible
+            document.getElementById("game-section").style.display = "block";
+        });
 
 
-            socket.on("auth_success", (response) => {
-                console.log("✅ Authentication successful:", response.message);
-            });
-
-            socket.on("auth_failed", (response) => {
-                console.error("❌ Authentication failed:", response.message);
-                localStorage.removeItem("token");
-                alert("Session expired. Please log in again.");
-                window.location.reload(); 
-            });
-        }
-
-    
         function login() {
             const username = document.getElementById("login-username").value;
             const password = document.getElementById("login-password").value;
 
+            console.log(`🔑 Sending login request - Username: ${username}`);
+
             socket.emit("login", { username, password });
 
             socket.on("login_response", (response) => {
+                console.log("📩 Login response:", response);
+                
                 if (response.success) {
                     document.getElementById("login-message").textContent = `Welcome, ${response.user.username}!`;
-                    document.getElementById("balance").textContent = response.user.balance; // Show balance
 
                     document.getElementById("signup-section").style.display = "none";
                     document.getElementById("login-section").style.display = "none";
-                    document.getElementById("game-section").style.display = "block";
-                    
+                    document.getElementById("main-section").style.display = "block";
+                    document.getElementById("user-name").textContent = response.user.username;
+
                     localStorage.setItem("token", response.token);
-
                     authenticateUser();
-
-                    // ✅ Update game state properly
-                    socket.on("game_update", (data) => {
-                        document.getElementById("timer").textContent = data.timer;
-                        document.getElementById("number").textContent = data.winningNumber;
-                    });
                 } else {
                     document.getElementById("login-message").textContent = response.message;
                 }
             });
         }
 
-        function placeBet() {
-            const balance = parseInt(document.getElementById("balance").textContent);
-            
-            if (balance < 20) {
-                document.getElementById("bet-message").textContent = "❌ Not enough coins!";
-                return;
-            }
+        function authenticateUser() {
+            const token = localStorage.getItem("token");
+            if (!token) return;
 
-            socket.emit("place_bet", { numbers: [1, 2, 3] });
+            console.log("🔍 Sending authentication request with token:", token);
+            socket.emit("authenticate", token);
 
-            socket.on("update_balance",(response) => {
-                document.getElementById("balance").textContent = response.balance;
-            });
+            socket.on("auth_response", (response) => {
+                console.log("📩 Authentication response:", response);
 
-            socket.on("prize_pool_response", (response) => {
-                document.getElementById("prize").textContent = response.message;
-            });
+                if (response.success) {
+                    document.getElementById("signup-section").style.display = "none";
+                    document.getElementById("login-section").style.display = "none";
+                    document.getElementById("main-section").style.display = "block";
+                    document.getElementById("user-name").textContent = response.user.username;
 
-            socket.on("game_result", (response) => {
-                document.getElementById("bet-message").textContent = response.message;
+                    // ✅ Request game state after successful authentication
+                    socket.emit("get_game_state");
+                } else {
+                    localStorage.removeItem("token");
+                    window.location.reload();
+                }
             });
         }
 
-        // ✅ Update the displayed prize pool dynamically
-        socket.on("prize_pool_response", (data) => {
-            if (data.success) {
-                document.getElementById("prize").textContent = data.totalPrize + " coins";
-            } else {
-                document.getElementById("prize").textContent = "Error fetching prize pool";
-            }
-        });
-
-        window.onload = () => {
-            const token = localStorage.getItem("token");
-            if (token) {
-                console.log("🔹 Sending token for authentication...");
-                socket.emit("authenticate",  token );
-            } else {
-                console.log("🔹 No token found, user must log in.");
-            }
-        };
-
-        // ✅ Handle authentication response
-        socket.on("auth_response", (response) => {
-            if (response.success) {
-                console.log("✅ Authentication successful:", response.user.username);
-                document.getElementById("balance").textContent = response.user.balance;
-                document.getElementById("game-section").style.display = "block";
-                document.getElementById("signup-section").style.display = "none";
-                document.getElementById("login-section").style.display = "none";
-            } else {
-                console.log("❌ Authentication failed:", response.message);
-                localStorage.removeItem("token");
-                document.getElementById("login-message").textContent = response.message;
-            }
-        });
-
-
-        // ✅ Handle logout
-        socket.on("logout_response", (response) => {
-            console.log("✅ Logout:", response.message);
-            localStorage.removeItem("token");
-            window.location.reload();
-        });
 
         function logout() {
-            console.log("🔹 Logging out...");
+            console.log("🔴 Sending logout request...");
             socket.emit("logout");
+            localStorage.removeItem("token");
+            window.location.reload();
         }
 
-
-
-        
-
-    
+        window.onload = authenticateUser;
     </script>
-    
 </body>
 </html>

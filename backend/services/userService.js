@@ -6,7 +6,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const saltRounds = 10;
-const JWT_SECRET =  process.env.JWT_SECRET || "12345";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error("❌ Missing JWT_SECRET in environment variables!");
+}
+
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -17,28 +21,31 @@ const generateToken = (user) => {
 };
 
 //Sign up
-export const signupUser = (username, email, password, callback) => {
-    const checkUserQuery = "SELECT id FROM users WHERE username = ? OR email = ?";
-    const insertUserQuery = "INSERT INTO users (username, email, pass_hash, balance) VALUES (?, ?, ?, 100)";
+export const signupUser = async (username, email, password, callback) => {
+    try {
+        const [existingUsers] = await db.promise().query(
+            "SELECT id FROM users WHERE username = ? OR email = ?",
+            [username, email]
+        );
 
-    db.query(checkUserQuery, [username, email], (err, results) => {
-        if (err) return callback(err, null);
-
-        if (results.length > 0) {
+        if (existingUsers.length > 0) {
             return callback(null, { success: false, message: "Username or email already exists" });
         }
 
-        // Hash pass
-        bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
-            if (err) return callback(err, null);
+        // Hash password securely
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-            db.query(insertUserQuery, [username, email, hashedPassword], (err, result) => {
-                if (err) return callback(err, null);
-                return callback(null, { success: true, message: "User registered successfully!" });
-            });
-        });
-    });
+        await db.promise().query(
+            "INSERT INTO users (username, email, pass_hash, balance) VALUES (?, ?, ?, 100)",
+            [username, email, hashedPassword]
+        );
+
+        return callback(null, { success: true, message: "User registered successfully!" });
+    } catch (err) {
+        return callback(err, null);
+    }
 };
+
 
 // 🔹 Login
 export const loginUser = (username, password, callback) => {
@@ -72,13 +79,13 @@ export const verifyToken = (token, callback) => {
         if (err) {
             if (err.name === "TokenExpiredError") {
                 console.error("❌ Token expired.");
-                return callback(null, "expired");
+                return callback(null, { success: false, message: "Token expired" });
             }
             console.error("❌ Token verification failed:", err.message);
-            return callback(null);
+            return callback(null, { success: false, message: "Invalid token" });
         }
+
         console.log("✅ Token verified successfully:", decoded);
-        return callback(decoded);
+        return callback({ success: true, user: decoded });
     });
 };
-
