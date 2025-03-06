@@ -32,6 +32,7 @@
 
         <div id="game-section" style="display: none;">
             <h2>Game Status</h2>
+            <p> Balance: <span id="userBal">--</span></p>
             <p>⏳ Timer: <span id="game-timer">--</span> seconds</p>
             <p>🏆 Winning Number: <span id="winning-number">--</span></p>
         </div>
@@ -89,12 +90,19 @@
                     document.getElementById("user-name").textContent = response.user.username;
 
                     localStorage.setItem("token", response.token);
+
+                    socket.emit("user_balance", response.user.id);
                     authenticateUser();
                 } else {
                     document.getElementById("login-message").textContent = response.message;
                 }
             });
         }
+
+        socket.on("user_balance", (data) => {
+            console.log("user balance recieved: ", data.balance);
+            document.getElementById("userBal").textContent = data.balance
+        });
 
         function authenticateUser() {
             const token = localStorage.getItem("token");
@@ -112,8 +120,9 @@
                     document.getElementById("main-section").style.display = "block";
                     document.getElementById("user-name").textContent = response.user.username;
 
-                    // ✅ Request game state after successful authentication
                     socket.emit("get_game_state");
+
+                    socket.emit("user_balance", response.user.id);
                 } else {
                     localStorage.removeItem("token");
                     window.location.reload();

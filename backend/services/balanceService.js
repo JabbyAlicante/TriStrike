@@ -21,5 +21,6 @@ export function getUserBalance(userId, callback) {
             return callback(err, null);
         }
         callback(null, results[0]?.balance || 0);
+        
     });
 }

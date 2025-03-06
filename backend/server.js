@@ -5,7 +5,8 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { signupUser, loginUser, verifyToken } from "./services/userService.js";
-import { getGameState, startGameService } from "./services/gameService.js"
+import { getGameState, startGameService } from "./services/gameService.js";
+import { getUserBalance } from "./services/balanceService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,6 +92,7 @@ io.on("connection", (socket) => {
 
             if (decodedUser) {
                 console.log(`✅ Authentication successful`);
+                socket.user = decodedUser;
                 socket.join("authenticated");
                 socket.emit("auth_response", { success: true, user: decodedUser });
             } else {
@@ -111,6 +113,29 @@ io.on("connection", (socket) => {
             socket.emit("game_update", state);
         });
     });
+
+    socket.on("user_balance", () => {
+        console.log('🔍 Checking user authentication:', socket.user);
+    
+        if (!socket.user || !socket.user.user) {  
+            console.log("❌ Unauthorized access to user balance");
+            socket.emit("error", { message: "Unauthorized access" });
+            return;
+        }
+    
+        const userId = socket.user.user.id;  
+        getUserBalance(userId, (err, balance) => {
+            if (err) {
+                console.error("❌ Error fetching balance:", err);
+                socket.emit("error", { message: "Failed to fetch balance" });
+                return;
+            }
+            console.log(`💰 Sending balance to user ${userId}: ${balance}`);
+            socket.emit("user_balance", { balance });
+        });
+    });
+    
+    
 
     // LOGOUT
     socket.on("logout", () => {
