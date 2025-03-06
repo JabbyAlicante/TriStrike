@@ -6,7 +6,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { signupUser, loginUser, verifyToken } from "./services/userService.js";
 import { getGameState, startGameService } from "./services/gameService.js";
-import { getUserBalance } from "./services/balanceService.js";
+import { getUserBalance, deductBalance } from "./services/balanceService.js";
+import { distributePrizePool, getTotalPrizePool } from "./services/prizeService.js";
+import db from "./config/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +29,17 @@ const activeUsers = new Map();
 
 startGameService(io);
 
+// Middleware to check authentication for each request
+function isAuthenticated(socket) {
+    if (!socket.user || !socket.user.user) {
+        console.log(`❌ Unauthorized access attempt from socket: ${socket.id}`);
+        socket.emit("error", { message: "Unauthorized. Please log in." });
+        return false;
+    }
+    console.log(`✅ User authenticated: ${socket.user.user.id}`);
+    return true;
+}
+
 io.on("connection", (socket) => {
     console.log(`✅ New connection: ${socket.id}`);
 
@@ -34,19 +47,13 @@ io.on("connection", (socket) => {
     socket.on("signup", ({ username, email, password }) => {
         console.log(`📌 Signup attempt - Username: ${username}, Email: ${email}`);
         
-        if (!username || !email || !password) {
-            console.log("⚠ Signup failed: Missing fields");
-            return socket.emit("signup_response", { success: false, message: "All fields are required" });
-        }
-
         signupUser(username, email, password, (err, response) => {
             if (err) {
                 console.log("❌ Signup error: Database issue");
-                socket.emit("signup_response", { success: false, message: "Database error" });
-            } else {
-                console.log(`✅ Signup successful for: ${username}`);
-                socket.emit("signup_response", response);
+                return socket.emit("signup_response", { success: false, message: "Database error" });
             }
+            console.log(`✅ Signup successful for: ${username}`);
+            socket.emit("signup_response", response);
         });
     });
 
@@ -54,86 +61,165 @@ io.on("connection", (socket) => {
     socket.on("login", ({ username, password }) => {
         console.log(`🔑 Login attempt - Username: ${username}`);
         
-        if (!username || !password) {
-            console.log("⚠ Login failed: Missing credentials");
-            return socket.emit("login_response", { success: false, message: "Username and password required" });
-        }
-
         loginUser(username, password, (err, response) => {
             if (err) {
                 console.log("❌ Login error: Database issue");
-                socket.emit("login_response", { success: false, message: "Database error" });
-            } else if (response.success) {
+                return socket.emit("login_response", { success: false, message: "Database error" });
+            }
+
+            if (response.success) {
                 console.log(`✅ Login successful for: ${username}`);
                 activeUsers.set(socket.id, response.user);
-                socket.emit("login_response", response);
             } else {
                 console.log("❌ Login failed: Incorrect credentials");
-                socket.emit("login_response", response);
             }
+
+            socket.emit("login_response", response);
         });
     });
 
-    // AUTHENTICATE
+    // AUTHENTICATE USER
     socket.on("authenticate", (token) => {
-        console.log(`🔍 Authenticating user...`);
+        console.log("🔍 Authenticating user...");
         
-        if (!token || typeof token !== "string") {
-            console.log("⚠ Authentication failed: No token provided");
-            return socket.emit("auth_response", { success: false, message: "Invalid token. Please log in again." });
-        }
-
         verifyToken(token, (decodedUser, error) => {
-            if (error === "expired") {
-                console.log("⚠ Authentication failed: Token expired");
-                socket.emit("auth_response", { success: false, message: "Session expired. Please log in again." });
-                return;
+            if (error) {
+                console.log("❌ Authentication failed: Invalid or expired token");
+                return socket.emit("auth_response", { success: false, message: "Invalid or expired token" });
             }
 
-            if (decodedUser) {
-                console.log(`✅ Authentication successful`);
-                socket.user = decodedUser;
-                socket.join("authenticated");
-                socket.emit("auth_response", { success: true, user: decodedUser });
-            } else {
-                console.log("❌ Authentication failed: Invalid token");
-                socket.emit("auth_response", { success: false, message: "Invalid Token" });
-            }
+            console.log(`✅ Authentication successful for user ID: ${decodedUser.user.id}`);
+            socket.user = decodedUser;
+            socket.join("authenticated");
+            socket.emit("auth_response", { success: true, user: decodedUser });
         });
     });
 
-    socket.on("game_state", () =>{
-        if (!socket.rooms.has("authenticated")) {
-            console.log("unauthorized to game state");
-            socket.emit("game_update", { error:"Unauthorized"});
-            return;
-        }
-
-        getGameState((state) => {
-            socket.emit("game_update", state);
-        });
-    });
-
+    // GET USER BALANCE
     socket.on("user_balance", () => {
-        console.log('🔍 Checking user authentication:', socket.user);
-    
-        if (!socket.user || !socket.user.user) {  
-            console.log("❌ Unauthorized access to user balance");
-            socket.emit("error", { message: "Unauthorized access" });
-            return;
-        }
-    
-        const userId = socket.user.user.id;  
+        console.log("💰 Checking user balance...");
+        if (!isAuthenticated(socket)) return;
+
+        const userId = socket.user.user.id;
         getUserBalance(userId, (err, balance) => {
             if (err) {
-                console.error("❌ Error fetching balance:", err);
-                socket.emit("error", { message: "Failed to fetch balance" });
-                return;
+                console.log("❌ Error fetching balance:", err);
+                return socket.emit("error", { message: "Failed to fetch balance" });
             }
-            console.log(`💰 Sending balance to user ${userId}: ${balance}`);
+            console.log(`💰 User ${userId} balance: ${balance}`);
             socket.emit("user_balance", { balance });
         });
     });
+
+    // PLACE A BET
+    socket.on("place_bet", ({ gameId, chosenNumbers, betAmount }) => {
+        console.log(`🎲 Bet placed - User: ${socket.user?.user?.id}, Game: ${gameId}, Amount: ${betAmount}`);
+    
+        if (!isAuthenticated(socket)) return;
+    
+        const userId = socket.user.user.id;
+    
+        deductBalance(userId, betAmount, (err, newBalance) => {
+            if (err) {
+                console.log("❌ Bet failed: Insufficient balance");
+                return socket.emit("bet_response", { success: false, message: "Insufficient balance" });
+            }
+    
+            //  Place the bet and handle the response in `server.js`
+            db.query(`SELECT status FROM games WHERE id = ?`, [gameId], (err, results) => {
+                if (err || results.length === 0 || results[0].status !== "active") {
+                    console.log(`❌ Bet failed: Invalid or finished game ${gameId}`);
+                    return socket.emit("bet_failed", { message: "Invalid or finished game!" }); 
+                }
+    
+                //  Bet is valid, proceed
+                db.query(
+                    `INSERT INTO bets (user_id, game_id, numbers, amount) VALUES (?, ?, ?, ?)`, 
+                    [userId, gameId, JSON.stringify(chosenNumbers), betAmount], 
+                    (err) => {
+                        if (err) {
+                            console.error("❌ Error placing bet:", err);
+                            return socket.emit("bet_response", { success: false, message: "Bet failed" });
+                        }
+    
+                        console.log(`✅ Bet successful for User ${userId}. New balance: ${newBalance}`);
+                        socket.emit("bet_response", { success: true, message: "Bet placed!", newBalance });
+    
+                        // Fetch and broadcast the updated prize pool
+                        getTotalPrizePool(gameId, (err, prizePool) => {
+                            if (!err) {
+                                console.log(`📢 Updated Prize Pool: ${prizePool}`);
+                                io.emit("update_prize_pool", { gameId, prizePool });
+                            }
+                        });
+                    }
+                );
+            });
+        });
+    });
+        
+
+    // CHECK PRIZE POOL
+    socket.on("prize_pool", ({ gameId }) => {
+        console.log(`🏆 Fetching prize pool for game ${gameId}`);
+        if (!isAuthenticated(socket)) return;
+
+        getTotalPrizePool(gameId, (err, prizePool) => {
+            if (err) {
+                console.log("❌ Error retrieving prize pool:", err);
+                return socket.emit("prize_pool_response", { success: false, message: "Error retrieving prize pool" });
+            }
+
+            console.log(`🏆 Prize pool for game ${gameId}: ${prizePool}`);
+            socket.emit("prize_pool_response", { success: true, prizePool });
+        });
+    });
+
+    socket.on("game_ended", ({ gameId }) => {
+        console.log(`🏆 Game ${gameId} ended, distributing prizes...`);
+        
+        distributePrizePool(gameId, (err, message) => {
+            if (err) {
+                console.log("❌ Error distributing prizes:", err);
+                return socket.emit("prize_distribution", { success: false, message: "Error distributing prizes" });
+            }
+            console.log(`✅ Prize distribution completed: ${message}`);
+            socket.emit("prize_distribution", { success: true, message });
+        });
+    });
+
+    // GET GAME STATE
+    socket.on("game_state", () => {
+        console.log("🎮 Fetching game state...");
+        if (!isAuthenticated(socket)) return;
+    
+        getGameState((state) => {
+            console.log("🎮 Game state updated:", state);
+
+            io.emit("game_update", state);
+        });
+    });
+
+    socket.on("get_latest_game", (callback) => {
+        db.query("SELECT id FROM games WHERE status = 'ongoing' ORDER BY created_at DESC LIMIT 1", (err, results) => {
+            if (err || results.length === 0) {
+                console.log("❌ No active game found.");
+                if (typeof callback === "function") {
+                    return callback({ success: false });
+                } else {
+                    console.error("callback is not a function");
+                    return;
+                }
+            }
+            console.log(`📌 Latest active game ID: ${results[0].id}`);
+            if (typeof callback === "function") {
+                callback({ success: true, gameId: results[0].id });
+            } else {
+                console.error("callback is not a function");
+            }
+        });
+    });
+    
     
     
 
@@ -145,10 +231,17 @@ io.on("connection", (socket) => {
         socket.disconnect(true);
     });
 
+    // DISCONNECT
     socket.on("disconnect", () => {
         console.log(`🔴 User disconnected: ${socket.id}`);
-        activeUsers.delete(socket.id);
+        
+        // Remove from active users
+        if (activeUsers.has(socket.id)) {
+            console.log(`🗑 Removed user: ${socket.id} from active users`);
+            activeUsers.delete(socket.id);
+        }
     });
+    
 });
 
 const PORT = process.env.PORT || 3000;

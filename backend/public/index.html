@@ -33,112 +33,164 @@
         <div id="game-section" style="display: none;">
             <h2>Game Status</h2>
             <p> Balance: <span id="userBal">--</span></p>
+            <p>Prize pool: <span id="prizePool"></span></p>
             <p>⏳ Timer: <span id="game-timer">--</span> seconds</p>
             <p>🏆 Winning Number: <span id="winning-number">--</span></p>
+            <button id="betHere">bet</button>
+
         </div>
         
     </div>
 
     <script>
         const socket = io("http://localhost:3000");
-
+    
         function signup() {
             const username = document.getElementById("signup-username").value;
             const email = document.getElementById("signup-email").value;
             const password = document.getElementById("signup-password").value;
-
+    
             console.log(`📌 Sending signup request - Username: ${username}, Email: ${email}`);
-
             socket.emit("signup", { username, email, password });
-
+    
             socket.on("signup_response", (response) => {
                 console.log("📩 Signup response:", response);
                 document.getElementById("signup-message").textContent = response.message;
             });
         }
-
-        // Listen for game updates from the server
-        socket.on("game_update", (data) => {
-            console.log("🎮 Game Update Received:", data);
-
-            // Update UI with received game state
-            document.getElementById("game-timer").textContent = data.timer;
-            document.getElementById("winning-number").textContent = data.winningNumber;
-
-            // Show the game section if it's not visible
-            document.getElementById("game-section").style.display = "block";
-        });
-
-
+    
         function login() {
             const username = document.getElementById("login-username").value;
             const password = document.getElementById("login-password").value;
-
+    
             console.log(`🔑 Sending login request - Username: ${username}`);
-
             socket.emit("login", { username, password });
-
+    
             socket.on("login_response", (response) => {
                 console.log("📩 Login response:", response);
                 
                 if (response.success) {
                     document.getElementById("login-message").textContent = `Welcome, ${response.user.username}!`;
-
                     document.getElementById("signup-section").style.display = "none";
                     document.getElementById("login-section").style.display = "none";
                     document.getElementById("main-section").style.display = "block";
                     document.getElementById("user-name").textContent = response.user.username;
-
+    
                     localStorage.setItem("token", response.token);
-
-                    socket.emit("user_balance", response.user.id);
+                    localStorage.setItem("userId", response.user.id);
+    
+                    socket.emit("user_balance");
+                    socket.emit("prize_pool", { gameId: 1 });
                     authenticateUser();
                 } else {
                     document.getElementById("login-message").textContent = response.message;
                 }
             });
         }
-
-        socket.on("user_balance", (data) => {
-            console.log("user balance recieved: ", data.balance);
-            document.getElementById("userBal").textContent = data.balance
-        });
-
+    
         function authenticateUser() {
             const token = localStorage.getItem("token");
             if (!token) return;
-
+    
             console.log("🔍 Sending authentication request with token:", token);
             socket.emit("authenticate", token);
-
+    
             socket.on("auth_response", (response) => {
                 console.log("📩 Authentication response:", response);
-
+    
                 if (response.success) {
                     document.getElementById("signup-section").style.display = "none";
                     document.getElementById("login-section").style.display = "none";
                     document.getElementById("main-section").style.display = "block";
                     document.getElementById("user-name").textContent = response.user.username;
-
+    
                     socket.emit("get_game_state");
-
-                    socket.emit("user_balance", response.user.id);
+                    socket.emit("user_balance");
+                    socket.emit("prize_pool", { gameId: 1 });
                 } else {
                     localStorage.removeItem("token");
                     window.location.reload();
                 }
             });
         }
-
-
+    
+        socket.on("user_balance", (data) => {
+            console.log("💰 User balance received:", data.balance);
+            document.getElementById("userBal").textContent = data.balance;
+        });
+    
+        socket.on("prize_pool_response", (data) => {
+            console.log("🏆 Prize pool updated:", data.prizePool);
+            document.getElementById("prizePool").textContent = data.prizePool;
+        });
+    
+        socket.on("game_update", (data) => {
+            console.log("🎮 Game Update Received:", data);
+            document.getElementById("game-timer").textContent = data.timer;
+            document.getElementById("winning-number").textContent = data.winningNumber;
+            document.getElementById("game-section").style.display = "block";
+        });
+    
         function logout() {
             console.log("🔴 Sending logout request...");
             socket.emit("logout");
             localStorage.removeItem("token");
+            localStorage.removeItem("userId");
             window.location.reload();
         }
+    
+        // 🎲 Place Bet Function
+        function placeBet() {
+            console.log("🎲 Bet function triggered!");
+            const userId = localStorage.getItem("userId");
+            if (!userId) {
+                alert("❌ User ID not found. Please log in again.");
+                return;
+            }
+    
+            const chosenNumbers = [4, 4, 4];
+            const betAmount = 20;
+    
+            console.log("🔄 Fetching the latest ongoing game...");
+            socket.emit("get_latest_game", (response) => { 
+                if (!response.success) {
+                    alert("❌ No ongoing game found!");
+                    return;
+                }
+    
+                const gameId = response.gameId;
+                console.log(`🎲 Placing bet for User ${userId} in Game ${gameId}`);
+                socket.emit("place_bet", { userId, gameId, chosenNumbers, betAmount });
+            });
+        }
+    
+        // ✅ Fix: Move bet response 
+        socket.on("bet_response", (response) => {
+            console.log("📩 Bet response:", response);
+            if (response.success) {
+                alert("✅ Bet placed successfully!");
+                socket.emit("user_balance"); 
+                socket.emit("prize_pool", { gameId: response.gameId }); 
+            } else {
+                alert("❌ Bet failed: " + response.message);
+            }
+        });
+    
+        // Handle Prize Payouts
+        socket.on("winner_announcement", (data) => {
+            console.log("🏆 Winner Announced:", data);
+            if (data.userId === localStorage.getItem("userId")) {
+                alert(`🎉 Congratulations! You won ${data.prizeAmount} coins!`);
+            }
+            socket.emit("user_balance");
+            socket.emit("prize_pool", { gameId: 1 });
+        });
 
+        document.getElementById("betHere").addEventListener("click", placeBet);
+    
         window.onload = authenticateUser;
     </script>
+    
+
 </body>
 </html>
