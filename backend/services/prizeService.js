@@ -2,119 +2,147 @@ import db from "../config/db.js";
 import { addPrizeToWinner } from "./balanceService.js";
 
 export function getTotalPrizePool(gameId, callback) {
-    db.query(`SELECT SUM(amount) AS total_prize_pool FROM bets WHERE game_id = ?`, [gameId], (err, results) => {
-        if (err) {
-            console.error("❌ Error fetching total prize pool:", err);
-            return callback(err, null);
-        }
-
-        const totalPrizePool = results[0]?.total_prize_pool || 0;
-        console.log(`💰 Total prize pool for Game ${gameId}: ${totalPrizePool}`);
-        callback(null, totalPrizePool);
-    });
-}
-
-
-// Function to distribute prize among winners
-export function distributePrizePool(gameId, callback) {
-    console.log(`🔍 Checking for winners in Game ${gameId}`);
-
-    //Get total prize pool for the game
-    db.query(`SELECT SUM(amount) AS total_prize_pool FROM bets WHERE game_id = ?`, [gameId], (err, results) => {
-        if (err) {
-            console.error("❌ Error fetching prize pool:", err);
-            return callback(err);
-        }
-
-        const totalPrizePool = results[0]?.total_prize_pool || 0;
-        console.log(`💰 Total prize pool for Game ${gameId}: ${totalPrizePool}`);
-
-        // Find all winners
-        db.query(`SELECT user_id FROM bets WHERE game_id = ? AND is_winner = 1`, [gameId], (err, winners) => {
-            if (err) {
-                console.error("❌ Error fetching winners:", err);
-                return callback(err);
-            }
-
-            if (winners.length === 0) {
-                console.log(`⚠ No winners for Game ${gameId}. Carrying over prize pool.`);
-                storeCarryOverPrize(totalPrizePool);
-                return callback(null, "No winners. Prize carried over.");
-            }
-
-            //Split prize among winners
-            const prizePerWinner = Math.floor(totalPrizePool / winners.length); 
-            console.log(`🏆 Splitting ${totalPrizePool} among ${winners.length} winners (Each gets ${prizePerWinner})`);
-
-            let processedWinners = 0;
-            const connection = db; 
-
-            connection.beginTransaction(err => {
-                if (err) {
-                    console.error("❌ Error starting transaction:", err);
-                    return callback(err);
-                }
-
-                winners.forEach(({ user_id }) => {
-                    addPrizeToWinner(user_id, gameId, prizePerWinner, (err) => {
-                        if (err) {
-                            console.error(`❌ Error adding prize to User ${user_id}:`, err);
-                            return connection.rollback(() => callback(err));
-                        }
-
-                        processedWinners++;
-
-                        // If all winners have been processed, commit transaction
-                        if (processedWinners === winners.length) {
-                            connection.commit(err => {
-                                if (err) {
-                                    console.error("❌ Error committing transaction:", err);
-                                    return connection.rollback(() => callback(err));
-                                }
-
-                                console.log(`✅ All winners paid for Game ${gameId}`);
-                                callback(null, "Prizes distributed.");
-                            });
-                        }
-                    });
-                });
-            });
-        });
-    });
-}
-
-// Store carryover prize in a separate place until a new game starts
-function storeCarryOverPrize(amount) {
     db.query(
-        `INSERT INTO carryover_prizes (amount) VALUES (?)`, 
-        [amount], 
-        (err) => {
+        `SELECT SUM(amount) AS total_prize_pool FROM bets WHERE game_id = ?`,
+        [gameId],
+        (err, results) => {
             if (err) {
-                console.error("❌ Error storing carryover prize:", err);
-            } else {
-                console.log(`💰 Carryover prize of ${amount} stored for the next game.`);
+                console.error("❌ Error fetching total prize pool:", err);
+                return callback(err, null);
             }
+
+            const totalPrizePool = results[0]?.total_prize_pool || 0;
+            console.log(`💰 Total prize pool for Game ${gameId}: ${totalPrizePool}`);
+
+            updatePrizePoolInGame(gameId, totalPrizePool, callback);
         }
     );
 }
 
-// Apply carryover prize to the next game when it starts
-export function applyCarryOverToNewGame(newGameId) {
-    db.query(`SELECT SUM(amount) AS total_carryover FROM carryover_prizes`, (err, results) => {
-        if (err || !results[0] || results[0].total_carryover === 0) {
-            console.log("⚠ No carryover prize to apply.");
+
+// to distribute prize among winners
+export function distributePrizePool(gameId, callback) {
+    console.log(`🔍 Checking for winners in Game ${gameId}`);
+
+    db.query(
+        `UPDATE bets b
+         JOIN games g ON b.game_id = g.id
+         SET b.is_winner = 1
+         WHERE b.game_id = ? 
+         AND JSON_CONTAINS(JSON_ARRAY(g.winning_num), JSON_ARRAY(b.chosen_nums))`, 
+        [gameId],
+        (err, result) => {
+            if (err) {
+                console.error("❌ Error updating winners:", err);
+                return callback(err);
+            }
+
+            console.log(`✅ Updated winning bets: ${result.affectedRows} users marked as winners.`);
+
+            // Fetch total prize pool
+            db.query(`SELECT SUM(amount) AS total_prize_pool FROM bets WHERE game_id = ?`, [gameId], (err, results) => {
+                if (err) {
+                    console.error("❌ Error fetching prize pool:", err);
+                    return callback(err);
+                }
+
+                const totalPrizePool = results[0]?.total_prize_pool || 0;
+                console.log(`💰 Total prize pool for Game ${gameId}: ${totalPrizePool}`);
+
+                // Fetch winners
+                db.query(`SELECT user_id FROM bets WHERE game_id = ? AND is_winner = 1`, [gameId], (err, winners) => {
+                    if (err) {
+                        console.error("❌ Error fetching winners:", err);
+                        return callback(err);
+                    }
+
+                    if (winners.length === 0) {
+                        console.log(`⚠ No winners for Game ${gameId}. Carrying over prize pool.`);
+                        storeCarryOverPrize(totalPrizePool);
+                        return callback(null, "No winners. Prize carried over.");
+                    }
+
+                    const prizePerWinner = Math.floor(totalPrizePool / winners.length);
+                    console.log(`🏆 Splitting ${totalPrizePool} among ${winners.length} winners (Each gets ${prizePerWinner})`);
+
+                    const connection = db;
+                    connection.beginTransaction(err => {
+                        if (err) {
+                            console.error("❌ Error starting transaction:", err);
+                            return callback(err);
+                        }
+
+                        const prizePromises = winners.map(({ user_id }) => {
+                            return new Promise((resolve, reject) => {
+                                addPrizeToWinner(user_id, gameId, prizePerWinner, (err) => {
+                                    if (err) {
+                                        console.error(`❌ Error adding prize to User ${user_id}:`, err);
+                                        return reject(err);
+                                    }
+                                    resolve();
+                                });
+                            });
+                        });
+
+                        Promise.all(prizePromises)
+                            .then(() => {
+                                connection.commit(err => {
+                                    if (err) {
+                                        console.error("❌ Error committing transaction:", err);
+                                        return connection.rollback(() => callback(err));
+                                    }
+                                    console.log(`✅ All winners paid for Game ${gameId}`);
+                                    callback(null, "Prizes distributed.");
+                                });
+                            })
+                            .catch(err => {
+                                connection.rollback(() => {
+                                    console.error("❌ Transaction rolled back due to error:", err);
+                                    callback(err);
+                                });
+                            });
+                    });
+                });
+            });
+        }
+    );
+}
+
+
+function updatePrizePoolInGame(gameId, prizePool, callback) {
+    db.query(
+        `UPDATE games SET prize_pool = ? WHERE id = ?`,
+        [prizePool, gameId],
+        (err, result) => {
+            if (err) {
+                console.error("❌ Error updating prize pool in games table:", err);
+                return callback(err);
+            }
+            console.log(`✅ Prize pool updated for Game ${gameId}: ${prizePool}`);
+            callback(null, prizePool);
+        }
+    );
+}
+
+
+// Function to carry over the prize if no winners exist
+function storeCarryOverPrize(amount) {
+    db.query(`SELECT prize_pool FROM games WHERE status = 'ongoing' LIMIT 1`, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching ongoing game prize pool:", err);
             return;
         }
 
-        const carryoverAmount = results[0].total_carryover;
+        const currentPrizePool = results[0]?.prize_pool || 0;
+        const newPrizePool = currentPrizePool + amount;
 
-        db.query(`UPDATE games SET prize_pool = prize_pool + ? WHERE id = ?`, [carryoverAmount, newGameId], (err) => {
+        db.query(`UPDATE games SET prize_pool = ? WHERE status = 'ongoing'`, [newPrizePool], (err) => {
             if (err) {
-                console.error("❌ Error applying carryover prize:", err);
+                console.error("❌ Error updating carry-over prize pool:", err);
             } else {
-                console.log(`💰 Carryover prize of ${carryoverAmount} added to Game ${newGameId}`);
-                db.query(`DELETE FROM carryover_prizes`, () => {}); 
+                console.log(`🔄 Carry-over prize added! New Prize Pool: ${newPrizePool}`);
             }
         });
     });
 }
+

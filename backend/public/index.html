@@ -140,6 +140,8 @@
         }
     
         // 🎲 Place Bet Function
+        let latestGameId = null;  
+        const betAmount = 20;    
         function placeBet() {
             console.log("🎲 Bet function triggered!");
             const userId = localStorage.getItem("userId");
@@ -147,34 +149,44 @@
                 alert("❌ User ID not found. Please log in again.");
                 return;
             }
-    
-            const chosenNumbers = [4, 4, 4];
-            const betAmount = 20;
-    
+
             console.log("🔄 Fetching the latest ongoing game...");
-            socket.emit("get_latest_game", (response) => { 
-                if (!response.success) {
-                    alert("❌ No ongoing game found!");
-                    return;
-                }
-    
-                const gameId = response.gameId;
-                console.log(`🎲 Placing bet for User ${userId} in Game ${gameId}`);
-                socket.emit("place_bet", { userId, gameId, chosenNumbers, betAmount });
-            });
+            socket.emit("get_latest_game"); 
         }
-    
-        // ✅ Fix: Move bet response 
+
+        // Handle latest game response & store gameId
+        socket.on("latest_game_response", (response) => {
+            if (!response.success) {
+                alert("❌ No ongoing game found!");
+                return;
+            }
+
+            latestGameId = response.gameId;  
+            const userId = localStorage.getItem("userId");
+
+            console.log(`🎲 Placing bet for User ${userId} in Game ${latestGameId}`);
+            socket.emit("place_bet", { userId, gameId: latestGameId, chosenNumbers: [7, 7, 7], betAmount });
+        });
+
+        // Handle bet response 
         socket.on("bet_response", (response) => {
             console.log("📩 Bet response:", response);
             if (response.success) {
                 alert("✅ Bet placed successfully!");
                 socket.emit("user_balance"); 
-                socket.emit("prize_pool", { gameId: response.gameId }); 
+
+                if (latestGameId) {
+                    console.log("Emitting prize_pool event with gameId:", latestGameId);
+                    socket.emit("prize_pool", { gameId: latestGameId }); 
+                } else {
+                    console.error("❌ Missing gameId in bet_response!");
+                }
             } else {
                 alert("❌ Bet failed: " + response.message);
             }
         });
+
+
     
         // Handle Prize Payouts
         socket.on("winner_announcement", (data) => {

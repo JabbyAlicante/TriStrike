@@ -1,5 +1,5 @@
 import db from "../config/db.js";
-import { distributePrizePool } from "./prizeService.js";  
+import { distributePrizePool, getTotalPrizePool } from "./prizeService.js";  
 
 let gameState = {
     timer: 59,
@@ -84,6 +84,8 @@ function createNewGame() {
                 gameState.gameId = result.insertId;
                 gameState.isProcessing = false; 
                 console.log(`✅ New game started (ID: ${gameState.gameId})`);
+
+                getTotalPrizePool(gameState.gameId, () => {});
             } else {
                 console.error("❌ Database error while inserting game:", err);
             }
