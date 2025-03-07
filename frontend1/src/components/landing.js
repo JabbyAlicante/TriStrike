@@ -7,7 +7,10 @@ import '../styles/landing_mq.css';
 export default function LandingPage(root) {
 //   const component = document.createElement('h1');
   root.innerHTML = `
-      <div class="landing-container" id="landing-id">
+    <div class="landing-container" id="landing-id">
+      <div class="mini-logo1">
+            <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108692/TriStrikeLogo_eycqvd.png" alt="TriStrike">
+        </div>
       
         <div class="horo-wheel">
             <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741096973/Horoscope_Wheel_jrt0h6.png" alt="Horoscope Wheel">
@@ -36,7 +39,7 @@ export default function LandingPage(root) {
     </div>
 
     <div class="mini-logo">
-                <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108692/TriStrikeLogo_eycqvd.png" alt="">
+        <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108692/TriStrikeLogo_eycqvd.png" alt="">
     </div>
 
     <div class="about-container">
