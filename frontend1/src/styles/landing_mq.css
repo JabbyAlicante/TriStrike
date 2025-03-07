@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Playfair+Display:wght@400;700&display=swap');
+
+@media (min-width: 375px) {
+  .welcome-title {
+    margin-top: 14rem;
+    padding-bottom: 0;
+  }
+  
+  .tagline {
+    top: 13rem;
+    font-size: 20px;
+  }
+
+  .horo-wheel {
+    top: 10vh;
+  }
+  .horo-wheel img {
+    max-width: 120%;
+  }
+
+  .card-logo {
+    width: 250px;
+    height: 250px;
+    top: 130px;
+  }
+
+  .play-button {
+    bottom: 15px;
+  }
+
+  .play-start {
+    width: 10rem;
+    height: 3rem;
+    font-size: 28px;
+  }
+
+  .play-start:hover {
+    width: 12rem;
+    height: 4rem;
+    font-size: 30px;
+  }
+
+  .about-container {
+    height: 85vh;
+  }
+
+  .about-title .strike {
+  clip-path: inset(0 13% 0 30%);
+  }
+
+  .about-title img {
+    height: 300px;
+    position: relative;
+  }
+
+  .a_open {
+    font-size: 25px;
+    margin-top: 5rem;
+  }
+
+  .desc {
+    font-size: 18px;
+  }
+
+  .logo-photo img {
+    max-width: 250%;
+  }
+}
+
+
+@media (min-width: 425px) {
+  .welcome-title {
+    margin-top: 14rem;
+    padding-bottom: 0;
+  }
+  
+  .tagline {
+    top: 13rem;
+    font-size: 20px;
+  }
+
+  .horo-wheel {
+    top: 11vh;
+  }
+  .horo-wheel img {
+    max-width: 110%;
+  }
+
+  .card-logo {
+    width: 250px;
+    height: 250px;
+    top: 130px;
+  }
+
+  .play-button {
+    bottom: 15px;
+  }
+
+  .play-start {
+    width: 10rem;
+    height: 3rem;
+    font-size: 28px;
+  }
+
+  .play-start:hover {
+    width: 12rem;
+    height: 4rem;
+    font-size: 30px;
+  }
+}
