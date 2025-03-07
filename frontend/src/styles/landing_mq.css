@@ -12,12 +12,10 @@ color: #FFCF6B; //yellow/gold - shadow
 color: #E9BD65; // gold : button
 */
 
-* {
-  box-sizing: border-box;
-}
 
 body {
   background: #0A0614;
+  overflow-x: hidden;
 }
 
 #landing-id {
@@ -30,6 +28,7 @@ body {
   align-items: center;
   justify-content: center;
   height: 100vh;
+  overflow-x: hidden;
 }
 
 .landing-container {
@@ -78,19 +77,42 @@ body {
   height: 100%;
 }
 
+/* consult if mas pretty if may glow or if hover lang */
+.card-logo:hover{
+  filter: drop-shadow(0px 4px 20px #FFCF6B);
+}
+
 .welcome-title {
   position: relative;
   width: 100%;
-  height: auto;
+  height: 400px;
   display: flex;
   justify-content: center;
+  padding-bottom: 1.5rem;
+  margin-top: 16.5rem;
+  overflow-y: hidden;
 }
+
+.tagline {
+  position: absolute;
+  font-family: 'Playfair Display', serif;
+  font-weight: lighter;
+  color: #ffff;
+  top: 11rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.5rem;
+  display: flex;
+  /* left: 7rem; */
+  filter: drop-shadow(0px 0px 1px #000000);
+}
+
 
 .welcome-title .tri, .welcome-title .strike {
   position: absolute;
   width: 100%;
   height: auto;
   top: 0;
+  overflow-y: hidden;
 }
 
 .welcome-title .tri {
@@ -115,7 +137,9 @@ body {
   bottom: 25px;
   position: absolute;
   text-align: center;
+  padding-top: 1rem;
 }
+
 
 .play-start {
   width: 7rem;
@@ -128,6 +152,102 @@ body {
   color: #E9BD65;
   font-size: 22px;
   margin: 0 auto;
+}
+
+.play-start:hover {
+  width: 8rem;
+  height: 3rem;
+  background-color: #301D6C;
+  color: #ffaa00;
+  font-size: 25px;
+  filter: drop-shadow(2px 2px 4px #E9BD65);
+}
+
+
+
+.about-container {
+  display: grid;
+  align-items: center;
+  justify-content: space-between;
+  height: 100vh;
+  padding: 0.5rem;
+  background: #0A0614;
+  color: white;
+  grid-template-columns: 65% 35%;
+  gap: 0;
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-x: hidden;
+}
+
+.left-side {
+  margin-top: 0;
+}
+
+.left-side, .right-side {
+  padding-top: 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.mini-logo {
+  top: 0;
+}
+
+.mini-logo img{
+  max-width: 25%;
+}
+
+.about-title {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.about-title .tri, .about-title .strike {
+  position: absolute;
+  width: 100%;
+  height: auto;
+  top: -8rem;
+}
+
+.about-title .tri {
+  right: 0;
+  clip-path: inset(0 35% 0 0);
+  filter: drop-shadow(2px 2px 2px #301D6C);
+}
+
+.about-title .strike {
+  left: 0;
+  clip-path: inset(0 0 0 25%);
+  filter: drop-shadow(2px 2px 2px #FFCF6B);
+}
+
+.about-title img {
+  max-width: 100%;
+  height: auto;
+  display: flex;
+  margin-left: -1rem;
+}
+
+.a_open {
+  font-family: 'Marcellus SC', serif;
+  font-size: 22px;
+}
+
+.desc {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+}
+
+.logo-photo img{
+  max-width: 230%;
+  height: auto;
+  object-fit: cover;
+  clip-path: inset(0 50% 0 0);
 }
 
 @keyframes spin {
