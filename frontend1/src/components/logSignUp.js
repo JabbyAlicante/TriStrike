@@ -33,7 +33,7 @@ export default function LogSignUpPage(root) {
     </div>
   `;
 
-  const logoButton = root.querySelector(".mini-logo");
+  const logoButton = root.querySelector(".mini-logo-ls");
   logoButton.addEventListener("click", () => {
     LandingPage(root); 
   });

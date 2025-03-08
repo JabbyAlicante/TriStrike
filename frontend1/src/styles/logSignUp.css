@@ -72,3 +72,6 @@ background-repeat: no-repeat;
     filter:drop-shadow(2px 2px 5px #FFCF6B)
 }
 
+@media (min-width: 768px) {
+    
+}
