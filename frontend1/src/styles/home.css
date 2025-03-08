@@ -172,22 +172,15 @@
     background-color: #0A0614;
 }
 
-.pp-name {
+.pp-name, .prize {
     font-family: 'Marcellus SC', serif;
     font-size: 20px;
     color: #FFCF6B;
 }
 
-.prize {
-    font-family: 'Marcellus SC', serif;
-    font-size: 20px;
-    color: #FFCF6B;
-}
+
 
 @media (min-width: 1440px) {
-    .time {
-        font-size: 55rem;
-    }
 
     .cards img {
         width: 15%;
@@ -197,8 +190,26 @@
         max-width: 10%;
     }
 
-    .info .money {
-        margin-left: 1rem;
-        font-size: 45rem;
+    .money,
+    .info .time {
+        font-size: 40px;
+        margin: 5px 0;
+    }
+
+    
+    .game-board {
+        padding-top: 1.5rem;
+    }
+
+    .pp-name, .prize {
+        font-family: 'Marcellus SC', serif;
+        font-size: 35px;
+        color: #FFCF6B;
+    }
+    
+    .logo img {
+        width: 120px;
+        height: auto;
+        margin-right: 5px;
     }
 }
