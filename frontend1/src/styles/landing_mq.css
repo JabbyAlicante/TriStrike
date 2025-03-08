@@ -434,3 +434,85 @@
     /* z-index: -1; */
   }
 }
+
+@media (min-width: 1440px) {
+  #landing-id {
+    height: 100vh;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  
+
+  .horo-wheel {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%) translateX(-2%);
+    width: 100vh;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end;
+    /* align-items: center; */
+    overflow-x: hidden;
+  }
+  
+  .horo-wheel img {
+    max-width: 100%;
+    margin-right: 2rem;
+    overflow-x: hidden;
+  }
+
+  .card-logo {
+    display: none;
+  }
+
+  .welcome-title {
+    height: 400px;
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  
+
+  .welcome-title img {
+    width: 70%;
+    margin-right: 25rem;
+    clip-path: inset(0 0 0 6%);
+  }
+
+  .welcome-title .tri {
+    clip-path: inset(0 70% 0 0);
+  }
+  
+  .welcome-title .strike { 
+    clip-path: inset(0 0 0 28%);
+  }
+
+  .tagline {
+    margin-top: 9rem;
+    font-size: 40px;
+    margin-left: 13rem;
+  }
+
+  .play-button {
+    bottom: 10rem;
+    margin-right: 35rem;
+  }
+
+  .play-start {
+    width: 15rem;
+    height: 4.5rem;
+    font-size: 45px;
+    border-radius: 18px;
+  }
+
+  .play-start:hover {
+    width: 17rem;
+    height: 5rem;
+    font-size: 55px;
+  }
+}
+
+
