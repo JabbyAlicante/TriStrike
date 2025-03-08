@@ -24,21 +24,25 @@ export default function HomePage(root) {
           </div>
         </div>
         <div class="info">
-          <div class="score">Money: 100</div>
-          <div class="icons">
-            <img src="icon-settings.png" alt="Settings" />
-            <img src="icon-extra.png" alt="Extra" />
-          </div>
+          <div class="money">Money: 100</div>
+          
           <div class="time">00:00</div>
         </div>
       </header>
       
-
+      <div class="prize-pool">
+        <h1 class="pp-name">Prize Pool</h1>
+        <h1 class="prize">9999</h1>
+      </div>
       <section class="game-board">
         <div class="card-grid">
           ${cardsHTML}
         </div>
       </section>
+
+      <div class="bet-button">
+        <button class="bet">Place bet</button>
+      </div>
     </div>
     
   `;

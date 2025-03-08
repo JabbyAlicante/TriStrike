@@ -11,6 +11,7 @@
     height: 100vh;
     max-width: 100%;
     width: 100%;
+    font-family: 'Playfair Display', serif;
 }
   
 
@@ -21,6 +22,8 @@
     align-items: center;
     padding: 10px;
     background: rgba(0, 0, 0, 0.6);
+    position: sticky;
+    z-index: 1;
 }
 
 .logo {
@@ -48,7 +51,7 @@
     text-align: right;
 }
 
-.info .score,
+.info .money,
 .info .time {
     font-size: 15px;
     margin: 5px 0;
@@ -128,3 +131,43 @@
     background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png');
 }
 
+.bet-button {
+    width: 100%;
+    bottom: 25px;
+    position: absolute;
+    text-align: center;
+    padding-top: 1rem;
+}
+
+.bet {
+    width: 7rem;
+    height: 2.5rem;
+    background-color: #0A0614;
+    border: 2px solid #301D6C;
+    border-radius: 11px;
+    filter: drop-shadow(1px 1px 2px #301D6C);
+    font-family: 'Marcellus SC', serif;
+    color: #E9BD65;
+    font-size: 22px;
+    margin: 0 auto;
+}
+
+.prize-pool {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    align-items: center;
+    justify-items: center;
+    background-color: #0A0614;
+}
+
+.pp-name {
+    font-family: 'Marcellus SC', serif;
+    font-size: 20px;
+    color: #FFCF6B;
+}
+
+.prize {
+    font-family: 'Marcellus SC', serif;
+    font-size: 20px;
+    color: #FFCF6B;
+}

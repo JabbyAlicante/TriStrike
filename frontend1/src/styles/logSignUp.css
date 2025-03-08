@@ -66,3 +66,9 @@ background-repeat: no-repeat;
 .sign-up:hover {
     filter:drop-shadow(2px 2px 5px #FFCF6B)
 }
+
+@media (min-width:768px) {
+    .mini-logo {
+        display: flex;
+    }
+}
