@@ -442,8 +442,6 @@
     overflow-x: hidden;
   }
 
-  
-
   .horo-wheel {
     position: absolute;
     top: 50%;
@@ -473,8 +471,6 @@
     display: flex;
     justify-content: flex-start;
   }
-
-  
 
   .welcome-title img {
     width: 70%;
@@ -516,3 +512,28 @@
 }
 
 
+@media (min-width: 2560px) {
+
+  .landing-container {
+    background-color: aqua;
+  }
+
+  .horo-wheel {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%) translateX(-2%);
+    width: 100vh;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end;
+    /* align-items: center; */
+    overflow-x: hidden;
+  }
+  
+  .horo-wheel img {
+    max-width: 100%;
+    margin-right: 5rem;
+    overflow-x: hidden;
+  }
+}

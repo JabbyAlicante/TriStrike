@@ -1,6 +1,7 @@
 import LogSignUpPage from './logSignUp';
 import '../styles/common.css';
 import '../styles/landing_mq.css';
+import '../components/sparkleCursor';
 
 
 
@@ -81,4 +82,5 @@ export default function LandingPage(root) {
   playButton.addEventListener("click", () => {
     LogSignUpPage(root); 
   });
+
 }
