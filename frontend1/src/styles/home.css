@@ -184,7 +184,7 @@
     color: #FFCF6B;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1440px) {
     .time {
         font-size: 55px;
     }
