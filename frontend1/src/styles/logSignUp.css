@@ -24,10 +24,15 @@ background-repeat: no-repeat;
     padding-top: 1rem;
 }
 
-.mini-logo {
+.mini-logo-ls {
     display: flex;
     justify-content: flex-start;
+    top: 0;
 
+}
+
+.mini-logo-ls img{
+    max-width: 15%;
 }
 
 .card-holder {
@@ -67,8 +72,3 @@ background-repeat: no-repeat;
     filter:drop-shadow(2px 2px 5px #FFCF6B)
 }
 
-@media (min-width:768px) {
-    .mini-logo {
-        display: flex;
-    }
-}

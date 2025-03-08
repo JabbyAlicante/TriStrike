@@ -6,7 +6,7 @@ import SignUpPage from './signup';
 export default function LogSignUpPage(root) {
   root.innerHTML = `
     <div class="logSignUp-container" id="logSignUp-id">
-      <div class="mini-logo">
+      <div class="mini-logo-ls">
           <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741310929/TriStrikeLogo_sikapc.png" alt="">
       </div>
         <div class="ls-content">
