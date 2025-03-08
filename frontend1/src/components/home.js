@@ -24,9 +24,10 @@ export default function HomePage(root) {
           </div>
         </div>
         <div class="info">
-          <div class="money">Money: 100</div>
-          
-          <div class="time">00:00</div>
+          <div class="user-profile">
+            <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="Winning Card" />
+          </div>
+          <div class="time">01:00</div>
         </div>
       </header>
       
@@ -34,6 +35,12 @@ export default function HomePage(root) {
         <h1 class="pp-name">Prize Pool</h1>
         <h1 class="prize">9999</h1>
       </div>
+
+
+      <div class="empty">
+        <div class="money">Balance: 100</div>
+      </div>
+
       <section class="game-board">
         <div class="card-grid">
           ${cardsHTML}
