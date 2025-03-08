@@ -246,7 +246,7 @@
   }
 
   .right-side, .right-side img {
-    display: none;
+    display: flex;
   }
 
   .left-side {
@@ -430,7 +430,7 @@
     position: relative;
     display: flex;
     object-fit: none;
-    margin-left: 22rem;
+    margin-left: 75rem;
     /* z-index: -1; */
   }
 }
