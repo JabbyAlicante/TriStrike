@@ -186,7 +186,7 @@
 
 @media (min-width: 1440px) {
     .time {
-        font-size: 55px;
+        font-size: 55rem;
     }
 
     .cards img {
@@ -199,6 +199,6 @@
 
     .info .money {
         margin-left: 1rem;
-        font-size: 45px;
+        font-size: 45rem;
     }
 }
