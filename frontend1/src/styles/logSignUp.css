@@ -33,6 +33,7 @@ background-repeat: no-repeat;
 
 .mini-logo-ls img{
     max-width: 15%;
+    /* height: 15%; */
 }
 
 .card-holder {
@@ -73,5 +74,50 @@ background-repeat: no-repeat;
 }
 
 @media (min-width: 768px) {
+    #logSignUp-id {
+        height: 100vh;
+    }
     
+    .mini-logo-ls img {
+        max-width: 10%;
+    }
+
+    .login h3 {
+        font-size: 30px;
+    }
+
+    .ls-content {
+        padding: 0;
+    }
+    .choices {
+        font-size: 30px;
+        padding: 0;
+    }
+    
+    .sign-up img, .sign-up h3 {
+        filter: drop-shadow(0px 0px 7px #FFCF6B);
+        font-family: 'Marcellus SC', serif;
+        font-size: 45px;
+        max-width: 35rem;
+    }
+
+    .login img, .login h3 {
+        filter: drop-shadow(0px 0px 7px #301D6C);
+        font-family: 'Marcellus SC', serif;
+        font-size: 45px;
+        max-width: 35rem;
+    }
+
+    .login, .sign-up {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0;
+    }
+    
+    .login p, .sign-up p {
+        font-family: 'Playfair Display', serif; 
+        font-style: italic;
+        font-size: 30px;
+    }
 }
