@@ -196,6 +196,10 @@
         margin: 5px 0;
     }
 
+    .money {
+        margin-left: 1rem;
+    }
+
     
     .game-board {
         padding-top: 1.5rem;
@@ -211,5 +215,24 @@
         width: 120px;
         height: auto;
         margin-right: 5px;
+    }
+
+    .user-profile img {
+        max-width: 5%;
+    }
+
+    .bet-button {
+    width: 100%;
+    bottom: 25px;
+    position: absolute;
+    text-align: center;
+    padding-top: 1rem;
+    }
+
+    .bet {
+        width: 20rem;
+        height: 5rem;
+        background-color: #0A0614;
+        font-size: 50px;
     }
 }
