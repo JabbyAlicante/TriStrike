@@ -186,15 +186,19 @@
 
 @media (min-width: 768px) {
     .time {
-        font-size: 30px;
+        font-size: 55px;
     }
 
     .cards img {
         width: 15%;
     }
+    
+    .user-profile img {
+        max-width: 10%;
+    }
 
     .info .money {
         margin-left: 1rem;
-        font-size: 25px;
+        font-size: 45px;
     }
 }
