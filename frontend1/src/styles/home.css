@@ -54,7 +54,7 @@
 
 .info .money,
 .info .time {
-    font-size: 20px;
+    font-size: 25px;
     margin: 5px 0;
 }
 
@@ -89,7 +89,6 @@
 .empty {
     height: 55px;
 }
-
 
 
 .user-profile img {
@@ -183,4 +182,19 @@
     font-family: 'Marcellus SC', serif;
     font-size: 20px;
     color: #FFCF6B;
+}
+
+@media (min-width: 768px) {
+    .time {
+        font-size: 30px;
+    }
+
+    .cards img {
+        width: 15%;
+    }
+
+    .info .money {
+        margin-left: 1rem;
+        font-size: 25px;
+    }
 }
