@@ -15,14 +15,15 @@ color: #E9BD65; // gold : button
 
 * {
   box-sizing: border-box;
-  overflow-x: hidden;
   max-width: 100%;
-  }
+}
   
-  body {
-  background: #0A0614;
-  color: #ffff;
-  }
+body, html {
+background: #0A0614;
+color: #ffff;
+
+overflow-x: hidden;
+}
   
 
 #landing-id {
@@ -35,7 +36,7 @@ color: #E9BD65; // gold : button
   align-items: center;
   justify-content: center;
   /* height: 100vh; */
-  /* overflow-x: hidden; */
+  overflow-x: hidden;
 }
 
 .landing-container {
@@ -43,6 +44,7 @@ color: #E9BD65; // gold : button
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  overflow-x: hidden;
 }
 
 .mini-logo1 {
@@ -51,7 +53,6 @@ color: #E9BD65; // gold : button
 
 .horo-wheel {
   position: absolute;
-  top: 50vh;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 100%;
@@ -59,8 +60,8 @@ color: #E9BD65; // gold : button
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  overflow: hidden;
-  top: 40px;
+  overflow-x: hidden;
+  top: 100px;
 }
 
 .horo-wheel img {
@@ -70,6 +71,8 @@ color: #E9BD65; // gold : button
   transform: translateY(50%) rotate(180deg);
   animation: spin 70s linear infinite;
   filter: drop-shadow(0px 4px 15px #FFCF6B);
+  overflow-x: hidden;
+  
 }
 
 .card-logo {
