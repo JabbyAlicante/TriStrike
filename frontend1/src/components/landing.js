@@ -43,6 +43,11 @@ export default function LandingPage(root) {
     </div>
 
     <div class="about-container">
+        <div class="right-side1">
+            <div class="logo-photo1">
+                <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108718/card_olnq8o.png" alt="">
+            </div>
+        </div>
         <div class="left-side">
             <div class="about-title">
                 <div class="tri">
