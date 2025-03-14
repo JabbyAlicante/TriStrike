@@ -25,10 +25,6 @@ export default function HomePage(root) {
         webSocketService.send("user_balance", {});
     });
 
-    // Select elements for updates
-    // const timerElement = root.querySelector('#timer');
-    // const prizeElement = root.querySelector('.prize');
-    // const balanceElement = root.querySelector('.money');
 
     //  Timer update 
     webSocketService.on("game_update", (response) => {
@@ -55,11 +51,29 @@ export default function HomePage(root) {
 
         if (response.winningNumber) {
             console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
-            
-            document.querySelector('.header .logo .cards').textContent = response.winningNumber;
+    
+            const winningDigits = String(response.winningNumber).split('-').map(Number);
+    
+            const headerCards = document.querySelector('.header .logo .cards');
+    
+            if (headerCards) {
+                headerCards.innerHTML = '';
+    
+               
+                winningDigits.forEach(digit => {
+                    const cardFace = cardFaces.find(card => card.number === digit);
+                    if (cardFace) {
+                        const img = document.createElement('img');
+                        img.src = cardFace.url;
+                        img.alt = `Card ${digit}`;
+                        headerCards.appendChild(img);
+                    }
+                });
+            }
         } else {
-            console.error("Fetching Winning Number failed")
+            console.error("⚠️ Fetching Winning Number failed");
         }
+
     });
 
     
