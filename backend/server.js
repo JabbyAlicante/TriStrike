@@ -6,9 +6,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { signupUser, loginUser, verifyToken } from "./services/userService.js";
 import { getGameState, startGameService } from "./services/gameService.js";
-import { getUserBalance, deductBalance } from "./services/balanceService.js";
+import { getUserBalance } from "./services/balanceService.js";
 import { distributePrizePool, getTotalPrizePool, storeCarryOverPrize } from "./services/prizeService.js";
 import { placeBet } from "./services/betsService.js";
+import { strikeStore } from "./services/store.js";
 import db from "./config/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -245,6 +246,31 @@ io.on("connection", (socket) => {
                 socket.emit("latest_game_response", { success: true, gameId: results[0].id });
             }
         );
+    });
+
+    socket.on("buy_coins", ({ amount }) => {
+        console.log(`User ${socket.user?.user?.id} buying ${amount} coins...`);
+         if (!isAuthenticated(socket)) return;
+
+         const userId = socket.user.user.id;
+
+         strikeStore(userId, amount, (err,result) => {
+            if (err) {
+                console.error("Error buying coins", err);
+                return socket.emit("buy_coins_response", { success: false, message: "failed to buy coins"});
+            }
+
+            console.log(`User ${userId} successfully bought ${amount} coins`);
+
+            getUserBalance(userId, (err, balance) => {
+                if (err) {
+                    console.error("error fetching bal", err);
+                    return;
+                }
+
+                socket.emit("buy_coins_response", { success: true, balance, message: `${amount} coins added to to your balance`});
+            });
+         });
     });
 
 

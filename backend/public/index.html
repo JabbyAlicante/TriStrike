@@ -68,6 +68,23 @@
                 </div>
                 <p>Selected Combination: <span id="selected-combination">-</span></p>
             </div>
+
+            <div>
+                <h3>Buy Coins</h3>
+                <div>
+                    <input type="radio" id="gcash" name="payment-method" value="GCash" checked>
+                    <label for="gcash">GCash</label>
+                    <input type="radio" id="paymaya" name="payment-method" value="PayMaya">
+                    <label for="paymaya">PayMaya</label>
+                </div>
+                <button onclick="buyCoins(1000)">Buy 1000 Coins</button>
+                <button onclick="buyCoins(100)">Buy 100 Coins</button>
+                <button onclick="buyCoins(50)">Buy 50 Coins</button>
+                <button onclick="buyCoins(20)">Buy 20 Coins</button>
+            </div>
+            <p>Current Balance: <span id="balance">0</span> coins</p>
+            
+
         </div>
     </div>
 
@@ -241,6 +258,38 @@
             socket.emit("user_balance");
             socket.emit("prize_pool", { gameId: 1 });
         });
+
+        function buyCoins(amount) {
+            // Get the selected payment method
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            
+            if (!paymentMethod) {
+                alert("Please select a payment method.");
+                return;
+            }
+
+            console.log(`🔵 Buying ${amount} coins using ${paymentMethod}...`);
+            
+            socket.emit("buy_coins", { 
+                amount, 
+                paymentMethod 
+            });
+        }
+
+        socket.on("buy_coins_response", (data) => {
+            if (data.success) {
+                alert(`✅ ${data.message}`);
+                updateBalanceDisplay(data.balance);
+            } else {
+                alert("❌ Failed to buy coins: " + data.message);
+            }
+        });
+
+
+
+        function updateBalanceDisplay(balance) {
+            document.getElementById("balance").innerText = balance;
+        }
     
         // ✅ Logout
         function logout() {

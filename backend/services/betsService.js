@@ -85,12 +85,3 @@ export function placeBet(userId, gameId, chosenNumbers, io) {
         });
     });
 }
-
-
-// function rollbackTransaction(connection, io, userId, message, err) {
-//     console.error(`❌ ${message}`, err);
-//     connection.rollback(() => {
-//         connection.release();
-//         io.to(userId).emit("bet_failed", { message });
-//     });
-// }
