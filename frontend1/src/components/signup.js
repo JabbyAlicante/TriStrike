@@ -1,6 +1,7 @@
 import "../styles/signup.css";
 import LandingPage from "./landing";
 import LogSignUpPage from "./logSignUp";
+import LoginPage from "./login";
 import webSocketService from "../core/websocketClient";
 
 export default function SignUpPage(root) {
@@ -72,7 +73,7 @@ export default function SignUpPage(root) {
     webSocketService.on("signup_response", (response) => {
         if (response.success) {
             showAlert("Signup successful! Redirecting...");
-            setTimeout(() => LandingPage(root), 2000);
+            setTimeout(() => LoginPage(root), 2000);
         } else {
             showAlert(response.message);
         }
@@ -87,4 +88,14 @@ export default function SignUpPage(root) {
             alertBox.style.display = "none";
         }, 3000);
     }
+
+    webSocketService.on("signup_response", (response) => {
+        if (response.success) {
+            showAlert("Sign up successful!");
+            setTimeout(() => LoginPage(root, 2000));
+
+        } else {
+            showAlert(response.message);
+        }
+    })
 }

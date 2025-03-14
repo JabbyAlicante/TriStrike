@@ -107,6 +107,14 @@ overflow-x: hidden;
   overflow-y: hidden;
 }
 
+.tri img:hover {
+  filter: drop-shadow(1px 1px 3px #FFCF6B);
+}
+
+.strike img:hover {
+  filter: drop-shadow(1px 1px 3px #301D6C);
+}
+
 .tagline {
   position: absolute;
   font-family: 'Playfair Display', serif;
@@ -119,6 +127,10 @@ overflow-x: hidden;
   display: flex;
   /* left: 7rem; */
   filter: drop-shadow(0px 0px 1px #000000);
+}
+
+.tagline:hover {
+  filter: drop-shadow(1px 1px 3px #FFCF6B);
 }
 
 

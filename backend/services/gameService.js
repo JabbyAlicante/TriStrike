@@ -50,6 +50,8 @@ export function startGameService(io) {
 
         if (gameState.gameId) {
             io.to("authenticated").emit("game_update", gameState);
+            
+            io.to("authenticated").emit("timer_update", gameState.timer);
         }
     }, 1000);
 }

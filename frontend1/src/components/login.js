@@ -1,6 +1,7 @@
 import '../styles/login.css';
 import LandingPage from './landing';
 import LogSignUpPage from './logSignUp';
+import HomePage from './home';
 import webSocketService from '../core/websocketClient';
 
 export default function LoginPage(root) {
@@ -72,7 +73,7 @@ export default function LoginPage(root) {
 
       webSocketService.send("authenticate", response.token);
 
-      setTimeout(() => LandingPage(root), 2000);
+      setTimeout(() => HomePage(root), 2000);
     } else {
       showAlert(response.message);
     }

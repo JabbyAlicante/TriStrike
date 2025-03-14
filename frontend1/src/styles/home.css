@@ -6,7 +6,7 @@
     padding: 0;
     font-family: Arial, sans-serif;
     color: #fff;
-    background: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741097142/TriStrike_Backgrounds_c5lgsn.png') no-repeat center center fixed;
+    background: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741913080/TriStrike_Background-less_vlo5ba.png') no-repeat center center fixed;
     background-size: cover;
     height: 100vh;
     max-width: 100%;
@@ -79,8 +79,8 @@
 
 .card-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-gap: 5px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 3px;
     width: 100%;
     max-width: none;
     margin: 0 auto;
@@ -139,7 +139,7 @@
 
 .card-front {
     transform: rotateY(180deg);
-
+    background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741404897/1_fez030.png');
     background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png');
 }
 
