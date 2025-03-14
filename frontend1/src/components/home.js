@@ -32,20 +32,23 @@ export default function HomePage(root) {
 
     //  Timer update 
     webSocketService.on("game_update", (response) => {
-        console.log("📦 Game update received:", response);
-
+        // console.log("📦 Game update received:", response);
+    
         if (typeof response.timer !== "undefined") {
             console.log(`🕒 Timer update received: ${response.timer}`);
-
-            const timerElement = document.getElementById("timer"); 
-            if (!timerElement) {
-                console.error("❌ Error: Timer element not found in the DOM");
-                return;
-            }
     
-            const minutes = Math.floor(response.timer / 60);
-            const seconds = response.timer % 60;
-            timerElement.textContent = `Next draw in: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+           
+            setTimeout(() => {
+                const timerElement = document.getElementById("timer");
+                if (!timerElement) {
+                    console.error("❌ Error: Timer element not found in the DOM");
+                    return;
+                }
+        
+                const minutes = Math.floor(response.timer / 60);
+                const seconds = response.timer % 60;
+                timerElement.textContent = `Next draw in: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 100); 
         } else {
             console.error("⚠️ Timer update failed: Invalid response structure");
         }
@@ -116,9 +119,17 @@ export default function HomePage(root) {
                 </div>
             </div>
             <div class="info">
-                <div class="user-profile">
+                <div class="user-profile" id="userProfile">
                     <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="User Profile" />
+                    <div class="dropdown" id="dropdown">
+                        <ul>
+                            <li id="dashboard">Dashboard</li>
+                            <li id="leaderboard">Leaderboard</li>
+                            <li id="logout">Logout</li>
+                        </ul>
+                    </div>
                 </div>
+
                 <div class="timer" id="timer">Next draw in: --:--</div>
             </div>
         </header>
@@ -170,4 +181,29 @@ export default function HomePage(root) {
         webSocketService.send("user_balance", {});
     });
     root.appendChild(refreshButton);
+
+    setTimeout(() => {
+        const userProfile = root.querySelector('.user-profile');
+        const dropdown = root.querySelector('.dropdown');
+        const logoutButton = root.querySelector('#logout');
+
+        if (userProfile && dropdown) {
+            userProfile.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', () => {
+                dropdown.classList.remove('show');
+            });
+        }
+
+        if (logoutButton) {
+            logoutButton.addEventListener('click', () => {
+                console.log('🚪 Logging out...');
+                localStorage.removeItem('authToken');
+                window.location.href = '/login';
+            });
+        }
+    }, 0);
 }
