@@ -150,7 +150,6 @@ export default function HomePage(root) {
     </div>
     `;
 
-    // 🃏 Handle card flipping
     const cards = root.querySelectorAll('.card');
     let flippedCards = 0;
 
