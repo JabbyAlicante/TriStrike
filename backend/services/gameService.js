@@ -85,17 +85,59 @@ function createNewGame() {
                 gameState.isProcessing = false; 
                 console.log(`✅ New game started (ID: ${gameState.gameId})`);
 
-                getTotalPrizePool(gameState.gameId, () => {});
+                // Fetch previous game's prize pool and carry it over
+                getTotalPrizePool(gameState.gameId - 1, (err, previousPrizePool) => {
+                    if (err) {
+                        console.error("❌ Error fetching previous prize pool:", err);
+                        return;
+                    }
+
+                    if (previousPrizePool > 0) {
+                        console.log(`🔄 Carrying over prize pool of ${previousPrizePool} from game ${gameState.gameId - 1} to game ${gameState.gameId}`);
+                        
+                        // carried-over prize to the new game's pool
+                        db.query(
+                            `UPDATE games SET prize_pool = prize_pool + ? WHERE id = ?`,
+                            [previousPrizePool, gameState.gameId],
+                            (err) => {
+                                if (err) {
+                                    console.error("❌ Error carrying over prize pool:", err);
+                                } else {
+                                    console.log(`✅ Prize pool carried over: ${previousPrizePool}`);
+
+                                    // Confirm updated prize pool
+                                    getTotalPrizePool(gameState.gameId, (err, newPrizePool) => {
+                                        if (!err) {
+                                            console.log(`🏆 Updated prize pool for game ${gameState.gameId}: ${newPrizePool}`);
+                                        }
+                                    });
+                                }
+                            }
+                        );
+                    } else {
+                        console.log(`🚫 No prize to carry over from game ${gameState.gameId - 1}`);
+                    }
+                });
+
             } else {
                 console.error("❌ Database error while inserting game:", err);
             }
-        });
+        }
+    );
 }
+
 
 export function getGameState(callback) {
     callback(gameState);
 }
 
 function generateWinningNumber() {
-    return Math.floor(Math.random() * 12) + 1; 
+    let numbers = new Set();
+
+    while (numbers.size < 3)  {
+        numbers.add(Math.floor(Math.random() * 12) + 1);
+    }
+
+    return Array.from(numbers).join('-');
+    
 }

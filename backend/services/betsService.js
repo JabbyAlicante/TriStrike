@@ -1,5 +1,5 @@
 import db from "../config/db.js";
-import { deductBalance } from "./balanceService.js"; 
+import { deductBalance, addPrizeToWinner } from "./balanceService.js"; 
 import { getTotalPrizePool } from "./prizeService.js";  
 
 export function placeBet(userId, gameId, chosenNumbers, io) {
@@ -15,12 +15,14 @@ export function placeBet(userId, gameId, chosenNumbers, io) {
     }
 
     // Check if the game is still ongoing
-    db.query(`SELECT id FROM games WHERE id = ? AND status = 'ongoing'`, [gameId], (err, results) => {
+    db.query(`SELECT id, winning_num FROM games WHERE id = ? AND status = 'ongoing'`, [gameId], (err, results) => {
         if (err || results.length === 0) {
             console.error("❌ Bet failed: Invalid or finished game", gameId);
             io.to(userId).emit("bet_failed", { message: "Invalid or finished game!" });
             return;
         }
+
+        const winningCombination = results[0].winning_num.split('-').map(Number);
 
         // Deduct balance
         deductBalance(userId, betAmount, (err, newBalance) => {
@@ -32,53 +34,63 @@ export function placeBet(userId, gameId, chosenNumbers, io) {
 
             console.log(`💰 Balance deducted. New balance for User ${userId}: ${newBalance}`);
 
-            db.getConnection((err, connection) => {
-                if (err) {
-                    console.error("❌ Database connection error:", err);
-                    io.to(userId).emit("bet_failed", { message: "Database connection error!" });
-                    return;
-                }
-
-                connection.beginTransaction(err => {
+            db.query(
+                `INSERT INTO bets (user_id, game_id, chosen_nums, amount) VALUES (?, ?, ?, ?)`, 
+                [userId, gameId, chosenNumsString, betAmount], 
+                (err) => {
                     if (err) {
-                        return rollbackTransaction(connection, io, userId, "Transaction error!", err);
+                        console.error("❌ Error placing bet:", err);
+                        io.to(userId).emit("bet_failed", { message: "Error placing bet!" });
+                        return;
                     }
 
-                    connection.query(
-                        `INSERT INTO bets (user_id, game_id, chosen_nums, amount) VALUES (?, ?, ?, ?)`, 
-                        [userId, gameId, chosenNumsString, betAmount], 
-                        (err) => {
-                            if (err) {
-                                return rollbackTransaction(connection, io, userId, "Error placing bet!", err);
-                            }
-
-                            getTotalPrizePool(gameId, betAmount, (err) => {
-                                if (err) {
-                                    return rollbackTransaction(connection, io, userId, "Error updating prize pool!", err);
-                                }
-
-                                connection.commit(err => {
-                                    if (err) {
-                                        return rollbackTransaction(connection, io, userId, "Error committing transaction!", err);
-                                    }
-
-                                    console.log(`✅ Bet placed successfully by User ${userId} on Game ${gameId}`);
-                                    connection.release();
-                                    io.to(userId).emit("bet_success", { balance: newBalance });
-                                });
-                            });
+                    // Update the prize pool
+                    getTotalPrizePool(gameId, betAmount, (err) => {
+                        if (err) {
+                            console.error("❌ Error updating prize pool:", err);
+                            io.to(userId).emit("bet_failed", { message: "Error updating prize pool!" });
+                            return;
                         }
-                    );
-                });
-            });
+
+                        // Check if the bet matches the winning combination
+                        const chosenCombination = chosenNumbers.map(Number);
+
+                        console.log(`🎯 Winning Combination: ${winningCombination}`);
+                        console.log(`🎯 Chosen Combination: ${chosenCombination}`);
+
+                        if (JSON.stringify(winningCombination) === JSON.stringify(chosenCombination)) {
+                            console.log(`🏆 User ${userId} WON!`);
+
+                            //  5x reward for a win
+                            const rewardAmount = betAmount * 2;
+                            addPrizeToWinner(userId, rewardAmount, (err, updatedBalance) => {
+                                if (!err) {
+                                    console.log(`💰 User ${userId} rewarded with ${rewardAmount}. New balance: ${updatedBalance}`);
+                                    io.to(userId).emit("bet_success", { 
+                                        balance: updatedBalance, 
+                                        win: true, 
+                                        prize: rewardAmount 
+                                    });
+                                } else {
+                                    console.error("❌ Error updating balance after win:", err);
+                                }
+                            });
+                        } else {
+                            console.log(`❌ User ${userId} lost.`);
+                            io.to(userId).emit("bet_success", { balance: newBalance, win: false });
+                        }
+                    });
+                }
+            );
         });
     });
 }
 
-function rollbackTransaction(connection, io, userId, message, err) {
-    console.error(`❌ ${message}`, err);
-    connection.rollback(() => {
-        connection.release();
-        io.to(userId).emit("bet_failed", { message });
-    });
-}
+
+// function rollbackTransaction(connection, io, userId, message, err) {
+//     console.error(`❌ ${message}`, err);
+//     connection.rollback(() => {
+//         connection.release();
+//         io.to(userId).emit("bet_failed", { message });
+//     });
+// }

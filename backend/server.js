@@ -7,7 +7,8 @@ import { fileURLToPath } from "url";
 import { signupUser, loginUser, verifyToken } from "./services/userService.js";
 import { getGameState, startGameService } from "./services/gameService.js";
 import { getUserBalance, deductBalance } from "./services/balanceService.js";
-import { distributePrizePool, getTotalPrizePool } from "./services/prizeService.js";
+import { distributePrizePool, getTotalPrizePool, storeCarryOverPrize } from "./services/prizeService.js";
+import { placeBet } from "./services/betsService.js";
 import db from "./config/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -111,130 +112,141 @@ io.on("connection", (socket) => {
         });
     });
 
-    // PLACE A BET
+    // PLACE BET
     socket.on("place_bet", ({ gameId, chosenNumbers, betAmount }) => {
         console.log(`🎲 Bet placed - User: ${socket.user?.user?.id}, Game: ${gameId}, Amount: ${betAmount}`);
-    
+
         if (!isAuthenticated(socket)) return;
-    
+
         const userId = socket.user.user.id;
-    
-        deductBalance(userId, betAmount, (err, newBalance) => {
+
+        placeBet(userId, gameId, chosenNumbers, (err, result) => {
             if (err) {
-                console.log("❌ Bet failed: Insufficient balance");
-                return socket.emit("bet_response", { success: false, message: "Insufficient balance" });
+                console.error("❌ Error placing bet:", err);
+                return socket.emit("bet_response", { success: false, message: "Failed to place bet" });
             }
-    
-            //  Place the bet 
-            db.query(`SELECT status FROM games WHERE id = ?`, [gameId], (err, results) => {
-                if (err || results.length === 0 || results[0].status !== "ongoing") {
-                    console.log(`❌ Bet failed: Invalid or finished game ${gameId}`);
-                    return socket.emit("bet_failed", { message: "Invalid or finished game!" }); 
-                }
-    
-                db.query(
-                    `INSERT INTO bets (user_id, game_id, chosen_nums, amount) VALUES (?, ?, ?, ?)`, 
-                    [userId, gameId, JSON.stringify(chosenNumbers), betAmount], 
-                    (err) => {
-                        if (err) {
-                            console.error("❌ Error placing bet:", err);
-                            return socket.emit("bet_response", { success: false, message: "Bet failed" });
-                        }
-    
-                        console.log(`✅ Bet successful for User ${userId}. New balance: ${newBalance}`);
-                        socket.emit("bet_response", { success: true, message: "Bet placed!", newBalance });
-    
-                        // Fetch and broadcast the updated prize pool
-                        getTotalPrizePool(gameId, (err, prizePool) => {
-                            if (!err) {
-                                console.log(`📢 Updated Prize Pool: ${prizePool}`);
-                                io.emit("update_prize_pool", { gameId, prizePool });
-                            }
-                        });
-                    }
-                );
-            });
+            console.log(`✅ Bet placed successfully for user ${userId}`);
+            socket.emit("bet_response", { success: true, message: "Bet placed successfully", result });
         });
     });
-        
 
     // CHECK PRIZE POOL
     socket.on("prize_pool", (data) => {
+        if (!isAuthenticated(socket)) return;
         console.log("🔍 Received prize_pool event with data:", data);
-    
+
         const { gameId } = data;
-    
+
         if (!gameId) {
             console.error("❌ Missing gameId in prize_pool event!");
             return socket.emit("prize_pool_response", { success: false, message: "Invalid game ID" });
         }
-    
+
         console.log(`🏆 Fetching prize pool for game ${gameId}`);
-        if (!isAuthenticated(socket)) return;
-    
+
         getTotalPrizePool(gameId, (err, prizePool) => {
             if (err) {
-                console.log("❌ Error retrieving prize pool:", err);
+                console.error("❌ Error retrieving prize pool:", err);
                 return socket.emit("prize_pool_response", { success: false, message: "Error retrieving prize pool" });
             }
-    
+
             console.log(`🏆 Prize pool for game ${gameId}: ${prizePool}`);
             socket.emit("prize_pool_response", { success: true, prizePool });
+
+            // START DISTRIBUTION AFTER FETCHING PRIZE POOL
+            distributePrizePool(gameId, (err, message) => {
+                if (err) {
+                    console.error("❌ Error distributing prize pool:", err);
+                    return socket.emit("prize_distribution_response", { success: false, message: "Error distributing prize pool" });
+                }
+
+                console.log(`✅ ${message}`);
+
+                // AFTER DISTRIBUTION, FETCH UPDATED PRIZE POOL
+                getTotalPrizePool(gameId, (err, updatedPrizePool) => {
+                    if (err) {
+                        console.error("❌ Error fetching updated prize pool:", err);
+                        return;
+                    }
+
+                    console.log(`🔄 Updated prize pool for next game: ${updatedPrizePool}`);
+
+                    // SEND UPDATED PRIZE POOL TO ALL CONNECTED CLIENTS
+                    io.emit("prize_pool_response", { success: true, prizePool: updatedPrizePool });
+                });
+            });
         });
     });
-    
 
+    // GAME ENDED
     socket.on("game_ended", ({ gameId }) => {
         console.log(`🏆 Game ${gameId} ended, distributing prizes...`);
-        
-        distributePrizePool(gameId, (err, message) => {
+
+        distributePrizePool(gameId, (err, result) => {
             if (err) {
                 console.log("❌ Error distributing prizes:", err);
                 return socket.emit("prize_distribution", { success: false, message: "Error distributing prizes" });
             }
-    
-            console.log(`✅ Prize distribution completed: ${message}`);
-            socket.emit("prize_distribution", { success: true, message });
-    
-            if (message === "No winners. Prize carried over.") {
+
+            console.log(`✅ ${result?.message || "Prizes distributed successfully."}`);
+
+            if (result?.winners?.length > 0) {
+                result.winners.forEach(({ userId, amount }) => {
+                    console.log(`🎉 Prize awarded: User ${userId} received ${amount} coins`);
+                });
+            } else {
                 console.log("🔄 No winners, carrying over prize to next round.");
                 getTotalPrizePool(gameId, (err, totalPrizePool) => {
                     if (!err && totalPrizePool > 0) {
-                        storeCarryOverPrize(totalPrizePool);
+                        storeCarryOverPrize(totalPrizePool, (err, result) => {
+                            if (err) console.error("❌ Failed to carry over prize:", err);
+                            else console.log(`✅ ${result}`);
+                        });
                     }
                 });
             }
+
+            // ✅ Broadcast to all clients
+            io.emit("prize_distribution", {
+                success: true,
+                message: result?.message || "Prize distribution completed.",
+                winners: result?.winners || []
+            });
         });
     });
-        
 
     // GET GAME STATE
     socket.on("game_state", () => {
         console.log("🎮 Fetching game state...");
         if (!isAuthenticated(socket)) return;
-    
-        getGameState((state) => {
-            console.log("🎮 Game state updated:", state);
 
+        getGameState((state) => {
+            if (!state) {
+                console.error("❌ Failed to fetch game state");
+                return socket.emit("game_update", { success: false, message: "Failed to fetch game state" });
+            }
+
+            console.log("🎮 Game state updated:", state);
             io.emit("game_update", state);
         });
     });
 
+    // GET LATEST GAME
     socket.on("get_latest_game", () => {
-        db.query("SELECT id FROM games WHERE status = 'ongoing' ORDER BY created_at DESC LIMIT 1", (err, results) => {
-            if (err || results.length === 0) {
-                console.log("❌ No active game found.");
-                socket.emit("latest_game_response", { success: false });
-                return;
+        db.query(
+            "SELECT id FROM games WHERE status = 'ongoing' ORDER BY created_at DESC LIMIT 1",
+            (err, results) => {
+                if (err || results.length === 0) {
+                    console.log("❌ No active game found.");
+                    socket.emit("latest_game_response", { success: false });
+                    return;
+                }
+                console.log(`📌 Latest active game ID: ${results[0].id}`);
+                socket.emit("latest_game_response", { success: true, gameId: results[0].id });
             }
-            console.log(`📌 Latest active game ID: ${results[0].id}`);
-            socket.emit("latest_game_response", { success: true, gameId: results[0].id });
-        });
+        );
     });
-    
-    
-    
-    
+
 
     // LOGOUT
     socket.on("logout", () => {

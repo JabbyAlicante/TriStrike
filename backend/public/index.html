@@ -9,6 +9,7 @@
 <body>
     <h1>Tristrike Game</h1>
 
+    <!-- Signup Section -->
     <div id="signup-section">
         <h3>Signup</h3>
         <input type="text" id="signup-username" placeholder="Username">
@@ -18,6 +19,7 @@
         <p id="signup-message"></p>
     </div>
 
+    <!-- Login Section -->
     <div id="login-section">
         <h3>Login</h3>
         <input type="text" id="login-username" placeholder="Username">
@@ -26,51 +28,80 @@
         <p id="login-message"></p>
     </div>
 
+    <!-- Main Section -->
     <div id="main-section" style="display: none;">
         <h2>Welcome, <span id="user-name"></span>!</h2>
         <button onclick="logout()">Logout</button>
 
         <div id="game-section" style="display: none;">
             <h2>Game Status</h2>
-            <p> Balance: <span id="userBal">--</span></p>
-            <p>Prize pool: <span id="prizePool"></span></p>
+            <p>💰 Balance: <span id="userBal">--</span></p>
+            <p>🏆 Prize pool: <span id="prizePool">--</span></p>
             <p>⏳ Timer: <span id="game-timer">--</span> seconds</p>
             <p>🏆 Winning Number: <span id="winning-number">--</span></p>
-            <button id="betHere">bet</button>
+            <button id="betHere">Place Bet</button>
 
+            <!-- Number Selection -->
+            <div id="number-set-section">
+                <h3>Select Your Combination</h3>
+                <div id="number-buttons">
+                    <div>
+                        <button onclick="selectNumber(1)">1</button>
+                        <button onclick="selectNumber(2)">2</button>
+                        <button onclick="selectNumber(3)">3</button>
+                    </div>
+                    <div>
+                        <button onclick="selectNumber(4)">4</button>
+                        <button onclick="selectNumber(5)">5</button>
+                        <button onclick="selectNumber(6)">6</button>
+                    </div>
+                    <div>
+                        <button onclick="selectNumber(7)">7</button>
+                        <button onclick="selectNumber(8)">8</button>
+                        <button onclick="selectNumber(9)">9</button>
+                    </div>
+                    <div>
+                        <button onclick="selectNumber(10)">10</button>
+                        <button onclick="selectNumber(11)">11</button>
+                        <button onclick="selectNumber(12)">12</button>
+                    </div>
+                </div>
+                <p>Selected Combination: <span id="selected-combination">-</span></p>
+            </div>
         </div>
-        
     </div>
 
     <script>
         const socket = io("http://localhost:3000");
+        const betAmount = 20; // Define bet amount (20 coins)
+        let selectedNumbers = [];
     
+        // ✅ Signup
         function signup() {
             const username = document.getElementById("signup-username").value;
             const email = document.getElementById("signup-email").value;
             const password = document.getElementById("signup-password").value;
     
-            console.log(`📌 Sending signup request - Username: ${username}, Email: ${email}`);
+            console.log("🔵 Signup request:", { username, email, password });
             socket.emit("signup", { username, email, password });
     
             socket.on("signup_response", (response) => {
-                console.log("📩 Signup response:", response);
+                console.log("🟢 Signup response:", response);
                 document.getElementById("signup-message").textContent = response.message;
             });
         }
     
+        // ✅ Login
         function login() {
             const username = document.getElementById("login-username").value;
             const password = document.getElementById("login-password").value;
     
-            console.log(`🔑 Sending login request - Username: ${username}`);
+            console.log("🔵 Login request:", { username, password });
             socket.emit("login", { username, password });
     
             socket.on("login_response", (response) => {
-                console.log("📩 Login response:", response);
-                
+                console.log("🟢 Login response:", response);
                 if (response.success) {
-                    document.getElementById("login-message").textContent = `Welcome, ${response.user.username}!`;
                     document.getElementById("signup-section").style.display = "none";
                     document.getElementById("login-section").style.display = "none";
                     document.getElementById("main-section").style.display = "block";
@@ -79,6 +110,7 @@
                     localStorage.setItem("token", response.token);
                     localStorage.setItem("userId", response.user.id);
     
+                    console.log("✅ Login successful, fetching data...");
                     socket.emit("user_balance");
                     socket.emit("prize_pool", { gameId: 1 });
                     authenticateUser();
@@ -88,121 +120,144 @@
             });
         }
     
+        // ✅ Authentication
         function authenticateUser() {
             const token = localStorage.getItem("token");
+            console.log("🔵 Authenticating with token:", token);
             if (!token) return;
     
-            console.log("🔍 Sending authentication request with token:", token);
             socket.emit("authenticate", token);
     
             socket.on("auth_response", (response) => {
-                console.log("📩 Authentication response:", response);
-    
+                console.log("🟢 Auth response:", response);
                 if (response.success) {
-                    document.getElementById("signup-section").style.display = "none";
-                    document.getElementById("login-section").style.display = "none";
                     document.getElementById("main-section").style.display = "block";
-                    document.getElementById("user-name").textContent = response.user.username;
-    
                     socket.emit("get_game_state");
                     socket.emit("user_balance");
                     socket.emit("prize_pool", { gameId: 1 });
                 } else {
+                    console.warn("❌ Authentication failed, clearing token...");
                     localStorage.removeItem("token");
                     window.location.reload();
                 }
             });
         }
     
+        // ✅ Update Balance and Prize Pool
         socket.on("user_balance", (data) => {
-            console.log("💰 User balance received:", data.balance);
+            console.log("🟢 User balance:", data);
             document.getElementById("userBal").textContent = data.balance;
         });
     
         socket.on("prize_pool_response", (data) => {
-            console.log("🏆 Prize pool updated:", data.prizePool);
+            console.log("🟢 Prize pool response:", data);
             document.getElementById("prizePool").textContent = data.prizePool;
         });
     
+        // ✅ Game State Update
         socket.on("game_update", (data) => {
-            console.log("🎮 Game Update Received:", data);
+            console.log("🟢 Game update:", data);
             document.getElementById("game-timer").textContent = data.timer;
             document.getElementById("winning-number").textContent = data.winningNumber;
             document.getElementById("game-section").style.display = "block";
         });
     
-        function logout() {
-            console.log("🔴 Sending logout request...");
-            socket.emit("logout");
-            localStorage.removeItem("token");
-            localStorage.removeItem("userId");
-            window.location.reload();
+        // ✅ Select Number Logic
+        function selectNumber(number) {
+            if (selectedNumbers.length < 3) {
+                selectedNumbers.push(number);
+            } else {
+                selectedNumbers.shift();
+                selectedNumbers.push(number);
+            }
+            console.log("🔵 Selected combination:", selectedNumbers);
+            document.getElementById("selected-combination").textContent = selectedNumbers.join("-");
         }
     
-        // 🎲 Place Bet Function
-        let latestGameId = null;  
-        const betAmount = 20;    
+        // ✅ Place Bet Logic
+        let hasPlacedBet = false;
         function placeBet() {
-            console.log("🎲 Bet function triggered!");
+            if (selectedNumbers.length !== 3) {
+                alert("Please select 3 numbers before placing a bet!");
+                console.warn("❌ Bet failed: Incomplete combination");
+                return;
+            }
+    
             const userId = localStorage.getItem("userId");
             if (!userId) {
-                alert("❌ User ID not found. Please log in again.");
+                alert("User ID not found. Please log in again.");
+                console.warn("❌ Bet failed: User ID not found");
                 return;
             }
-
-            console.log("🔄 Fetching the latest ongoing game...");
-            socket.emit("get_latest_game"); 
+    
+            console.log("🔵 Getting latest game for bet...");
+            socket.emit("get_latest_game");
         }
-
-        // Handle latest game response & store gameId
+    
         socket.on("latest_game_response", (response) => {
+            console.log("🟢 Latest game response:", response);
             if (!response.success) {
-                alert("❌ No ongoing game found!");
+                alert("No ongoing game found!");
                 return;
             }
-
-            latestGameId = response.gameId;  
+    
+            const latestGameId = response.gameId;
             const userId = localStorage.getItem("userId");
-
-            console.log(`🎲 Placing bet for User ${userId} in Game ${latestGameId}`);
-            socket.emit("place_bet", { userId, gameId: latestGameId, chosenNumbers: [7, 7, 7], betAmount });
+    
+            console.log("🔵 Placing bet:", {
+                userId,
+                gameId: latestGameId,
+                chosenNumbers: selectedNumbers,
+                betAmount
+            });
+    
+            socket.emit("place_bet", {
+                userId,
+                gameId: latestGameId,
+                chosenNumbers: selectedNumbers,
+                betAmount
+            });
         });
-
-        // Handle bet response 
+    
         socket.on("bet_response", (response) => {
-            console.log("📩 Bet response:", response);
+            console.log("🟢 Bet response:", response);
             if (response.success) {
-                alert("✅ Bet placed successfully!");
-                socket.emit("user_balance"); 
-
-                if (latestGameId) {
-                    console.log("Emitting prize_pool event with gameId:", latestGameId);
-                    socket.emit("prize_pool", { gameId: latestGameId }); 
-                } else {
-                    console.error("❌ Missing gameId in bet_response!");
-                }
+                alert(`✅ Bet placed successfully! Chosen combination: ${selectedNumbers.join("-")}`);
+                hasPlacedBet = true;
+                socket.emit("user_balance");
+                socket.emit("prize_pool", { gameId: response.gameId });
             } else {
                 alert("❌ Bet failed: " + response.message);
+                console.warn("❌ Bet failed:", response.message);
             }
         });
-
-
     
-        // Handle Prize Payouts
+        // ✅ Handle Winner Announcement
         socket.on("winner_announcement", (data) => {
-            console.log("🏆 Winner Announced:", data);
+            console.log("🟢 Winner announcement:", data);
             if (data.userId === localStorage.getItem("userId")) {
                 alert(`🎉 Congratulations! You won ${data.prizeAmount} coins!`);
             }
             socket.emit("user_balance");
             socket.emit("prize_pool", { gameId: 1 });
         });
-
+    
+        // ✅ Logout
+        function logout() {
+            console.log("🔵 Logging out...");
+            socket.emit("logout");
+            localStorage.clear();
+            window.location.reload();
+        }
+    
+        // ✅ Start Authentication on Load
+        window.onload = () => {
+            console.log("🔵 Initializing authentication...");
+            authenticateUser();
+        };
+    
+        // ✅ Attach event listeners
         document.getElementById("betHere").addEventListener("click", placeBet);
-    
-        window.onload = authenticateUser;
-    </script>
-    
-
+    </script>    
 </body>
 </html>

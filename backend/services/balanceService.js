@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 
+
 // Get user balance
 export function getUserBalance(userId, callback) {
     console.log(`💰 Fetching balance for User ID: ${userId}`);
@@ -62,19 +63,30 @@ export function deductBalance(userId, amount, callback) {
 
 // Add prize 
 export function addPrizeToWinner(userId, gameId, prizeAmount, callback) {
-    console.log(`🏆 Adding prize of ${prizeAmount} to User ID: ${userId} for Game ID: ${gameId}`);
-
     db.query(
-        `UPDATE users SET balance = balance + ? WHERE id = ?`, 
-        [prizeAmount, userId], 
+        `UPDATE users SET balance = balance + ? WHERE id = ?`,
+        [prizeAmount, userId],
         (err) => {
             if (err) {
-                console.error("❌ Error adding prize:", err);
-                return callback(err, null);
+                console.error(`❌ Error adding prize to User ${userId}:`, err);
+                return callback(err);
             }
 
-            console.log(`✅ Prize of ${prizeAmount} added to User ${userId} for Game ${gameId}`);
-            getUserBalance(userId, callback); 
+            // Fetch updated balance
+            db.query(
+                `SELECT balance FROM users WHERE id = ?`,
+                [userId],
+                (err, results) => {
+                    if (err) {
+                        console.error(`❌ Error fetching updated balance for User ${userId}:`, err);
+                        return callback(err);
+                    }
+
+                    const updatedBalance = results[0]?.balance || 0;
+                    console.log(`✅ User ${userId} new balance: ${updatedBalance}`);
+                    callback(null, updatedBalance);
+                }
+            );
         }
     );
 }
