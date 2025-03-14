@@ -98,21 +98,31 @@ io.on("connection", (socket) => {
         });
     });
 
-    // GET USER BALANCE
-    socket.on("user_balance", () => {
+    socket.on("user_balance", (data = {}) => {  // ✅ Prevents `undefined`
         console.log("💰 Checking user balance...");
+    
         if (!isAuthenticated(socket)) return;
-
-        const userId = socket.user.user.id;
+    
+        // Check if userId is provided by frontend or fallback to authenticated session
+        const userId = data?.userId || (socket.user && socket.user.user ? socket.user.user.id : undefined);
+    
+        if (!userId) {
+            console.log(`❌ Error: Missing userId. Received data:`, data, ` | Socket user:`, socket.user);
+            return socket.emit("error", { message: "User ID is required to fetch balance" });
+        }
+    
         getUserBalance(userId, (err, balance) => {
             if (err) {
                 console.log("❌ Error fetching balance:", err);
                 return socket.emit("error", { message: "Failed to fetch balance" });
             }
+    
             console.log(`💰 User ${userId} balance: ${balance}`);
-            socket.emit("user_balance", { balance });
+            socket.emit("user_balance", { success: true, balance });
         });
     });
+    
+
 
     // PLACE BET
     socket.on("place_bet", ({ gameId, chosenNumbers, betAmount }) => {

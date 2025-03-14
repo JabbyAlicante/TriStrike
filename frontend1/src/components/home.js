@@ -62,6 +62,31 @@ export default function HomePage(root) {
         }
     });
 
+    
+    webSocketService.on("user_balance", (response) => {
+        console.log("📦 User balance update received:", response);
+    
+        if (typeof response.balance !== "undefined") {
+            console.log(`💰 Balance update received: ${response.balance}`);
+    
+            // Use querySelector for class-based selection
+            const balElement = document.querySelector(".money"); 
+            if (!balElement) {
+                console.error("❌ Error: Balance element not found in the DOM");
+                return;
+            }
+    
+            console.log("✅ Updating balance text...");
+            balElement.textContent = `Balance: ${response.balance} coins`;
+    
+        } else {
+            console.error("⚠️ Balance update failed: Invalid response structure");
+        }
+    });
+    
+    
+
+
     // webSocketService.on("latest_game_response", (response) => { 
     //     if (response.success) {
     //         console.log(`🎯 Winning number received: ${response.number}`);
