@@ -11,6 +11,7 @@ import { distributePrizePool, getTotalPrizePool, storeCarryOverPrize } from "./s
 import { placeBet } from "./services/betsService.js";
 import { strikeStore } from "./services/store.js";
 import db from "./config/db.js";
+import { userHistory } from "./services/historyService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -272,6 +273,27 @@ io.on("connection", (socket) => {
             });
          });
     });
+
+    socket.on("get_last_bet", (data) => {
+        console.log(`📌 Tracking last bet for user: ${data.userId}`);
+        if (!data.userId) {
+            console.error("❌ Missing user ID");
+            return;
+        }
+    
+        userHistory(data.userId, (err, result) => {
+            if (err) {
+                console.error("❌ Error tracking last bet:", err);
+                socket.emit("last_bet_response", { success: false, message: "Failed to fetch last bet." });
+            } else {
+                console.log("📊 Last bet result:", result);
+                socket.emit("last_bet_response", result);
+            }
+        });
+    });
+    
+    
+    
 
 
     // LOGOUT

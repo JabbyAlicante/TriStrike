@@ -1,42 +1,59 @@
-// import db from "../config/db.js";
-// import { markWinningBet, addPrizeToWinner } from "./prizeService.js";
+import db from "../config/db.js";
 
-// export function processGameResults(gameId, winningNumber) {
-//     db.query(
-//         `SELECT user_id, amount FROM bets WHERE game_id = ? AND chosen_nums = ?`, 
-//         [gameId, winningNumber], 
-//         (err, winners) => {
-//             if (err) {
-//                 console.error("❌ Error fetching winners:", err);
-//                 return;
-//             }
+export function userHistory(userId, callback) {
+    console.log(`🛠️ Running query for user ID: ${userId}`);
+    
+    const query = `
+        SELECT 
+            b.id AS bet_id,
+            b.chosen_nums,
+            b.amount,
+            b.is_winner,
+            b.created_at
+        FROM 
+            bets b
+        LEFT JOIN 
+            prize_history p ON b.game_id = p.game_id AND b.user_id = p.user_id
+        WHERE 
+            b.user_id = ?
+        ORDER BY 
+            b.created_at DESC
+        LIMIT 5; -- ✅ Only fetch the last 5 bets
+    `;
 
-//             if (winners.length === 0) {
-//                 console.log("🚫 No winners for this game.");
-//                 return;
-//             }
+    db.query(query, [userId], (err, rows) => {
+        if (err) {
+            console.error("❌ Error fetching user history:", err);
+            return callback(err, null);
+        }
 
-//             winners.forEach((winner) => {
-//                 const userId = winner.user_id;
-//                 const prizeAmount = winner.amount * 2; // Example prize logic
+        console.log("🛠️ Query Result:", rows); 
 
-//                 markWinningBet(userId, gameId, (err) => {
-//                     if (err) {
-//                         console.error(`⚠️ Could not mark user ${userId} as winner.`);
-//                     } else {
-//                         addPrizeToWinner(userId, prizeAmount, (err) => {
-//                             if (err) {
-//                                 console.error(`⚠️ Failed to add prize for user ${userId}`);
-//                             }
-//                         });
-//                     }
-//                 });
-//             });
-//         }
-//     );
+        if (rows.length > 0) {
+            const history = rows.map(row => ({
+                bet_id: row.bet_id,
+                chosen_nums: (() => {
+                    try {
+                        return JSON.parse(row.chosen_nums);
+                    } catch (error) {
+                        return row.chosen_nums ? row.chosen_nums.split('-').map(Number) : [];
+                    }
+                })(),
+                amount: row.amount,
+                is_winner: row.is_winner === 1,
+                timestamp: row.created_at
+            }));
 
-//     // Mark the game as finished
-//     db.query(`UPDATE games SET status = 'finished' WHERE id = ?`, [gameId], (err) => {
-//         if (err) console.error("❌ Error updating game status:", err);
-//     });
-// }
+            callback(null, {
+                success: true,
+                history
+            });
+        } else {
+            console.warn("⚠️ No bet history found for user:", userId);
+            callback(null, {
+                success: false,
+                message: "No bet history found."
+            });
+        }
+    });
+}
