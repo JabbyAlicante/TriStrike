@@ -52,6 +52,14 @@ export default function HomePage(root) {
         } else {
             console.error("⚠️ Timer update failed: Invalid response structure");
         }
+
+        if (response.winningNumber) {
+            console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
+            
+            document.querySelector('.header .logo .cards').textContent = response.winningNumber;
+        } else {
+            console.error("Fetching Winning Number failed")
+        }
     });
 
     // webSocketService.on("latest_game_response", (response) => { 
@@ -76,16 +84,16 @@ export default function HomePage(root) {
 
     const cardCount = 20;
     const cardFaces = [
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/0_n5znur.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/1_bf13f8.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/2_diao4h.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/3_p429cg.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/4_wojdgb.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/5_trggdg.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/6_o6ffqr.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/7_evgrzq.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/8_ljnybq.png',
-        'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/9_dqpuap.png',
+        { number: 0, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/0_n5znur.png' },
+        { number: 1, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/1_bf13f8.png' },
+        { number: 2, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/2_diao4h.png' },
+        { number: 3, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/3_p429cg.png' },
+        { number: 4, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/4_wojdgb.png' },
+        { number: 5, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/5_trggdg.png' },
+        { number: 6, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/6_o6ffqr.png' },
+        { number: 7, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/7_evgrzq.png' },
+        { number: 8, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/8_ljnybq.png' },
+        { number: 9, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/9_dqpuap.png' }
     ];
 
     function shuffleCards(array) {
@@ -95,17 +103,24 @@ export default function HomePage(root) {
         }
     }
 
-    const allCardFaces = [...cardFaces, ...cardFaces.slice(0, cardCount - cardFaces.length)];
+    const allCardFaces = [
+        ...cardFaces, 
+        ...cardFaces.slice(0, cardCount - cardFaces.length)
+    ];
     shuffleCards(allCardFaces);
-
-    const cardsHTML = Array.from({ length: cardCount }, (_, index) => `
-        <div class="card" data-card-index="${index}" data-face="down">
-            <div class="card-inner">
-                <div class="card-side card-front" style="background-image: url('${allCardFaces[index % allCardFaces.length]}');"></div>
-                <div class="card-side card-back" style="background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png');"></div>
+    
+    const cardsHTML = Array.from({ length: cardCount }, (_, index) => {
+        const card = allCardFaces[index % allCardFaces.length]; 
+        return `
+            <div class="card" data-card-index="${index}" data-face="down" data-card-number="${card.number}">
+                <div class="card-inner">
+                    <div class="card-side card-front" style="background-image: url('${card.url}');"></div>
+                    <div class="card-side card-back" style="background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png');"></div>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+    
 
     root.innerHTML = `
     <div class="body">
@@ -155,17 +170,24 @@ export default function HomePage(root) {
     </div>
     `;
 
+    // Card flipping
     const cards = root.querySelectorAll('.card');
-    let flippedCards = 0;
+    let flippedCards = [];
 
     cards.forEach(card => {
         card.addEventListener('click', () => {
-            if (card.classList.contains('flip')) {
-                card.classList.remove('flip');
-                flippedCards--;
-            } else if (flippedCards < 3) {
+            if (!card.classList.contains('flip') && flippedCards.length < 3) {
+                
                 card.classList.add('flip');
-                flippedCards++;
+                flippedCards.push(card);
+    
+                if (flippedCards.length === 3) {
+                    
+                    setTimeout(() => {
+                        flippedCards.forEach(flippedCard => flippedCard.classList.remove('flip'));
+                        flippedCards = [];
+                    }, 1000); 
+                }
             }
         });
     });
