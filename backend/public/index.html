@@ -175,8 +175,9 @@
     
         socket.on("prize_pool_response", (data) => {
             console.log("🟢 Prize pool response:", data);
-            document.getElementById("prizePool").textContent = data.prizePool;
+            document.getElementById("prizePool").textContent = data.prizePool !== undefined ? data.prizePool : '--';
         });
+
     
         // ✅ Game State Update
         socket.on("game_update", (data) => {
@@ -263,7 +264,7 @@
                 alert(`🎉 Congratulations! You won ${data.prizeAmount} coins!`);
             }
             socket.emit("user_balance");
-            socket.emit("prize_pool", { gameId: 1 });
+            socket.emit("prize_pool_response", { gameId: 1 });
         });
 
         function buyCoins(amount) {

@@ -132,53 +132,53 @@ io.on("connection", (socket) => {
         });
     });
 
-    // CHECK PRIZE POOL
     socket.on("prize_pool", (data) => {
         if (!isAuthenticated(socket)) return;
         console.log("🔍 Received prize_pool event with data:", data);
-
+    
         const { gameId } = data;
-
+    
         if (!gameId) {
             console.error("❌ Missing gameId in prize_pool event!");
             return socket.emit("prize_pool_response", { success: false, message: "Invalid game ID" });
         }
-
+    
         console.log(`🏆 Fetching prize pool for game ${gameId}`);
-
-        getTotalPrizePool(gameId, (err, prizePool) => {
+    
+        getTotalPrizePool(gameId, (err, prizes) => {
             if (err) {
                 console.error("❌ Error retrieving prize pool:", err);
                 return socket.emit("prize_pool_response", { success: false, message: "Error retrieving prize pool" });
             }
-
-            console.log(`🏆 Prize pool for game ${gameId}: ${prizePool}`);
-            socket.emit("prize_pool_response", { success: true, prizePool });
-
+    
+            console.log(`🏆 Prize pool for game ${gameId}: ${prizes}`);
+            socket.emit("prize_pool_response", { success: true, prizePool: prizes });
+    
             // START DISTRIBUTION AFTER FETCHING PRIZE POOL
             distributePrizePool(gameId, (err, message) => {
                 if (err) {
                     console.error("❌ Error distributing prize pool:", err);
                     return socket.emit("prize_distribution_response", { success: false, message: "Error distributing prize pool" });
                 }
-
+    
                 console.log(`✅ ${message}`);
-
+    
                 // AFTER DISTRIBUTION, FETCH UPDATED PRIZE POOL
                 getTotalPrizePool(gameId, (err, updatedPrizePool) => {
                     if (err) {
                         console.error("❌ Error fetching updated prize pool:", err);
                         return;
                     }
-
+    
                     console.log(`🔄 Updated prize pool for next game: ${updatedPrizePool}`);
-
+    
                     // SEND UPDATED PRIZE POOL TO ALL CONNECTED CLIENTS
                     io.emit("prize_pool_response", { success: true, prizePool: updatedPrizePool });
                 });
             });
         });
     });
+    
 
     // GAME ENDED
     socket.on("game_ended", ({ gameId }) => {

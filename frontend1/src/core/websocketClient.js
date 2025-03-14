@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const WS_URL = "http://localhost:3000"; 
+const WS_URL = "http://localhost:3000";
 
 class WebSocketService {
     constructor() {
@@ -12,7 +12,7 @@ class WebSocketService {
     connect() {
         if (!this.socket) {
             const token = localStorage.getItem("authToken");
-            
+
             console.log(`Attempting to connect with token: ${token}`);
             this.socket = io(WS_URL, {
                 transports: ["websocket"],
@@ -26,6 +26,11 @@ class WebSocketService {
                 if (token) {
                     this.send("authenticate", token);
                 }
+
+                // Request initial data when connected
+                this.send("latest_game_response", {});
+                this.send("game_update", {});
+                this.send("user_balance", {});
             });
 
             this.socket.on("disconnect", () => {
@@ -73,8 +78,14 @@ class WebSocketService {
             this.isConnected = false;
         }
     }
-}
 
+    // Fetch latest timer, winning number, and balance
+    fetchLatestData() {
+        this.send("latest_game_response", {});
+        this.send("game_update", {});
+        this.send("user_balance", {});
+    }
+}
 
 const webSocketService = new WebSocketService();
 export default webSocketService;

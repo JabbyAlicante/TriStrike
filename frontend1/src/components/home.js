@@ -19,32 +19,63 @@ export default function HomePage(root) {
     webSocketService.on("connect", () => {
         console.log("✅ WebSocket re-authenticated");
         webSocketService.send("authenticate", token);
+
+        webSocketService.send("game_update", {});
+        webSocketService.send("latest_game_response", {});
+        webSocketService.send("user_balance", {});
     });
 
-    const timerElement = root.querySelector('#timer');
+    // const timerElement = root.querySelector('#timer');
+    // const prizeElement = root.querySelector('.prize');
+    // const balanceElement = root.querySelector('.money');
 
-    // webSocketService.on("timer_update", (timer) => {
-    //     console.log(`🕒 Timer update received: ${timer}`);
-    //     const minutes = Math.floor(timer / 60);
-    //     const seconds = timer % 60;
-    //     timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    //     console.log(`Updated timer text content to: ${timerElement.textContent}`);
+    webSocketService.on("game_update", (response) => {
+        console.log("📦 Game update received:", response);
+
+        if (typeof response.timer !== "undefined") {
+            console.log(`🕒 Timer update received: ${response.timer}`);
+
+            const timerElement = document.getElementById("timer"); 
+            if (!timerElement) {
+                console.error("❌ Error: Timer element not found in the DOM");
+                return;
+            }
+    
+            const minutes = Math.floor(response.timer / 60);
+            const seconds = response.timer % 60;
+            timerElement.textContent = `Next draw in: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        } else {
+            console.error("⚠️ Timer update failed: Invalid response structure");
+        }
+    });
+
+    // webSocketService.on("latest_game_response", (response) => { 
+    //     if (response.success) {
+    //         console.log(`🎯 Winning number received: ${response.number}`);
+    //         prizeElement.textContent = response.number;
+    //     } else {
+    //         console.error("⚠️ Failed to get winning number:", response.message);
+    //     }
     // });
 
-    webSocketService.on("timer_update", (response) => {
-      if (response.success) {
-  
 
-        console.log(`🕒 Timer update received: ${timer}`);
-        const minutes = Math.floor(timer / 60);
-        const seconds = timer % 60;
-        timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        console.log(`Updated timer text content to: ${timerElement.textContent}`)
-  
-      } else {
-        showAlert(response.message);
-      }
+    webSocketService.on("user_balance", (response) => {
+        if (response.success) {
+            console.log(`💰 Balance update received: ${response.balance}`);
+    
+            const balanceElement = document.getElementById("money");
+            if (!balanceElement) {
+                console.error("❌ Error: Balance element not found in the DOM");
+                return;
+            }
+    
+            balanceElement.textContent = `Balance: ${response.balance} coins`;
+        } else {
+            console.error("⚠️ Failed to update balance:", response.message);
+        }
     });
+    
+
 
     const cardCount = 20;
     const cardFaces = [
@@ -94,17 +125,17 @@ export default function HomePage(root) {
                 <div class="user-profile">
                     <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="User Profile" />
                 </div>
-                <div class="time" id="timer"></div>
+                <div class="timer" id="timer">Next draw in: --:--</div>
             </div>
         </header>
 
         <div class="prize-pool">
             <h1 class="pp-name">Prize Pool</h1>
-            <h1 class="prize">9999</h1>
+            <h1 class="prize">--</h1>
         </div>
 
         <div class="empty">
-            <div class="money">Balance: 100</div>
+            <div class="money">Balance: --</div>
         </div>
 
         <section class="game-board">
@@ -119,6 +150,7 @@ export default function HomePage(root) {
     </div>
     `;
 
+    // 🃏 Handle card flipping
     const cards = root.querySelectorAll('.card');
     let flippedCards = 0;
 
@@ -133,4 +165,16 @@ export default function HomePage(root) {
             }
         });
     });
+
+
+    // const refreshButton = document.createElement("button");
+    // refreshButton.textContent = "🔄 Refresh Data";
+    // refreshButton.classList.add("refresh-btn");
+    // refreshButton.addEventListener("click", () => {
+    //     console.log("🔄 Manually refreshing game data...");
+    //     webSocketService.send("game_update", {});
+    //     webSocketService.send("latest_game_response", {});
+    //     webSocketService.send("user_balance", {});
+    // });
+    // root.appendChild(refreshButton);
 }
