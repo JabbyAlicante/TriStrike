@@ -25,10 +25,12 @@ export default function HomePage(root) {
         webSocketService.send("user_balance", {});
     });
 
+    // Select elements for updates
     // const timerElement = root.querySelector('#timer');
     // const prizeElement = root.querySelector('.prize');
     // const balanceElement = root.querySelector('.money');
 
+    //  Timer update 
     webSocketService.on("game_update", (response) => {
         console.log("📦 Game update received:", response);
 
@@ -59,22 +61,14 @@ export default function HomePage(root) {
     // });
 
 
-    webSocketService.on("user_balance", (response) => {
-        if (response.success) {
-            console.log(`💰 Balance update received: ${response.balance}`);
-    
-            const balanceElement = document.getElementById("money");
-            if (!balanceElement) {
-                console.error("❌ Error: Balance element not found in the DOM");
-                return;
-            }
-    
-            balanceElement.textContent = `Balance: ${response.balance} coins`;
-        } else {
-            console.error("⚠️ Failed to update balance:", response.message);
-        }
-    });
-    
+    // webSocketService.on("user_balance", (response) => {
+    //     if (response.success) {
+    //         console.log(`💰 Balance update received: ${response.balance}`);
+    //         balanceElement.textContent = `Balance: ${response.balance} coins`;
+    //     } else {
+    //         console.error("⚠️ Failed to update balance:", response.message);
+    //     }
+    // });
 
 
     const cardCount = 20;
@@ -165,15 +159,15 @@ export default function HomePage(root) {
         });
     });
 
-
-    // const refreshButton = document.createElement("button");
-    // refreshButton.textContent = "🔄 Refresh Data";
-    // refreshButton.classList.add("refresh-btn");
-    // refreshButton.addEventListener("click", () => {
-    //     console.log("🔄 Manually refreshing game data...");
-    //     webSocketService.send("game_update", {});
-    //     webSocketService.send("latest_game_response", {});
-    //     webSocketService.send("user_balance", {});
-    // });
-    // root.appendChild(refreshButton);
+    //  Manual refresh button
+    const refreshButton = document.createElement("button");
+    refreshButton.textContent = "🔄 Refresh Data";
+    refreshButton.classList.add("refresh-btn");
+    refreshButton.addEventListener("click", () => {
+        console.log("🔄 Manually refreshing game data...");
+        webSocketService.send("game_update", {});
+        webSocketService.send("latest_game_response", {});
+        webSocketService.send("user_balance", {});
+    });
+    root.appendChild(refreshButton);
 }
