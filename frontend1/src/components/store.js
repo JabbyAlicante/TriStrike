@@ -1,17 +1,21 @@
 import '../styles/store.css';
+import webSocketService from '../core/websocketClient';
 
 export default function store(root) {
     root.innerHTML = `
         <div class="body">
             <header class="header">
-                <div class="logo">
+                <div class="logo" id="logo-img">
                     <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108692/TriStrikeLogo_eycqvd.png" alt="TriStrike Logo">
                 </div>
                 <div class="info">
-                    <div class="user-profile" id="userProfile">
+                    <div class="user-balance" id="balance-display">Balance: Loading...</div>
+
+                    <div class="user-img" id="userProfile">
                         <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="User Profile" />
                         <div class="dropdown" id="dropdown">
                             <ul>
+                                <li id="home">Home</li>
                                 <li id="history">History</li>
                                 <li id="logout">Logout</li>
                             </ul>
@@ -20,8 +24,17 @@ export default function store(root) {
                 </div>
             </header>
 
+            <div class="dropdown" id="dropdown">
+                <ul>
+                    <li id="home">Home</li>
+                    <li id="history">History</li>
+                    <li id="logout">Logout</li>
+                </ul>
+            </div>
+
             <!-- Coin Store Section -->
             <div class="store-container">
+
                 <h1>Buy Coins</h1>
                 <div class="coin-packages">
                     <div class="package">
@@ -71,7 +84,32 @@ export default function store(root) {
             </div>
         </div>
     `;
+    
+    webSocketService.connect();
+    webSocketService.fetchLatestData();
 
+
+    // webSocketService.on("user_balance", (response) => {
+    //     console.log("📦 User balance update received:", response);
+
+    //     if (typeof response.balance !== "undefined") {
+    //         console.log(`💰 Balance update received: ${response.balance}`);
+
+    //         const balanceDisplay = document.getElementById("balance-display");
+    //         if (balanceDisplay) {
+    //             console.log("✅ Updating balance text...");
+    //             balanceDisplay.textContent = `Balance: ${response.balance} coins`;
+    //         } else {
+    //             console.error("❌ Error: Balance element not found in the DOM");
+    //         }
+    //     } else {
+    //         console.error("⚠️ Balance update failed: Invalid response structure");
+    //     }
+    // });
+
+    
+
+   
     window.showPaymentModal = (amount, price) => {
         const modal = document.getElementById('paymentModal');
         modal.style.display = 'block';
@@ -80,21 +118,74 @@ export default function store(root) {
         form.onsubmit = (e) => {
             e.preventDefault();
             const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
-            alert(`You bought ${amount} coins for $${price.toFixed(2)} using ${paymentMethod}!`);
+
+           
+            webSocketService.send("purchase_coins", {
+                userId,
+                amount,
+                paymentMethod,
+            });
+
+            alert(`${userId}: Processing purchase of ${amount} coins for P${price.toFixed(2)} using ${paymentMethod}.`);
             closeModal();
         };
     };
 
-    // Close modal
+    
     window.closeModal = () => {
-        document.getElementById('paymentModal').style.display = 'none';
+        const modal = document.getElementById('paymentModal');
+        modal.style.display = 'none';
     };
 
-    // Close on outside click
+    
     window.onclick = (event) => {
         const modal = document.getElementById('paymentModal');
         if (event.target === modal) {
             closeModal();
         }
     };
+
+    setTimeout(() => {
+        const userProfile = root.querySelector('.user-img');
+        const dropdown = root.querySelector('.dropdown');
+        const logoutButton = root.querySelector('#logout');
+        const homeButton = root.querySelector('#home');
+        const logoButton = root.querySelector('#logo-img');
+
+        if (userProfile && dropdown) {
+            userProfile.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', () => {
+                dropdown.classList.remove('show');
+            });
+        }
+
+        if (logoutButton) {
+            logoutButton.addEventListener('click', () => {
+                console.log('🚪 Logging out...');
+                localStorage.removeItem('authToken');
+                window.location.href = '/';
+            });
+        }
+
+        if (home) {
+            homeButton.addEventListener('click', () => {
+                console.log('Redirecting to dashboard...');
+                window.location.href = '/home';
+            });
+        }
+
+        if (logoButton) {
+            logoButton.addEventListener('click', () => {
+                console.log('Removing token...');
+                localStorage.removeItem('authToken');
+                window.location.href = '/';
+            });
+        }
+
+
+    }, 0);
 }
