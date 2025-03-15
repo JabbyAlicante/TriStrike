@@ -48,7 +48,7 @@ class WebSocketService {
             });
 
             this.socket.onAny((event, payload) => {
-                console.log(`📦 Event received: ${event} with payload:`, payload);
+                // console.log(`📦 Event received: ${event} with payload:`, payload);
                 if (this.listeners[event]) {
                     this.listeners[event](payload);
                 }

@@ -74,6 +74,14 @@ export default function HomePage(root) {
             console.error("⚠️ Fetching Winning Number failed");
         }
 
+        // Game id
+        if (response.gameId) {
+            // console.log(`🎯 Game started! Game ID: ${response.gameId}`);
+            sessionStorage.setItem('gameId', response.gameId);
+        } else {
+            console.error("❌ No gameId received!");
+        }
+
     });
 
     
@@ -101,38 +109,20 @@ export default function HomePage(root) {
     
 
 
-    // webSocketService.on("latest_game_response", (response) => { 
-    //     if (response.success) {
-    //         console.log(`🎯 Winning number received: ${response.number}`);
-    //         prizeElement.textContent = response.number;
-    //     } else {
-    //         console.error("⚠️ Failed to get winning number:", response.message);
-    //     }
-    // });
-
-
-    // webSocketService.on("user_balance", (response) => {
-    //     if (response.success) {
-    //         console.log(`💰 Balance update received: ${response.balance}`);
-    //         balanceElement.textContent = `Balance: ${response.balance} coins`;
-    //     } else {
-    //         console.error("⚠️ Failed to update balance:", response.message);
-    //     }
-    // });
-
-
-    const cardCount = 20;
+    const cardCount = 15;
     const cardFaces = [
-        { number: 0, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/0_n5znur.png' },
-        { number: 1, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/1_bf13f8.png' },
-        { number: 2, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/2_diao4h.png' },
-        { number: 3, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/3_p429cg.png' },
-        { number: 4, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/4_wojdgb.png' },
-        { number: 5, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/5_trggdg.png' },
-        { number: 6, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930982/6_o6ffqr.png' },
-        { number: 7, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/7_evgrzq.png' },
-        { number: 8, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/8_ljnybq.png' },
-        { number: 9, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741930983/9_dqpuap.png' }
+        { number: 0, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/0_t5bmuh.png' },
+        { number: 1, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/1_swhmis.png' },
+        { number: 2, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/2_wv0nep.png' },
+        { number: 3, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/3_lnwl2b.png' },
+        { number: 4, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/4_ep0sdj.png' },
+        { number: 5, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/5_rw57g6.png' },
+        { number: 6, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/6_z4acoj.png' },
+        { number: 7, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/7_uttbwr.png' },
+        { number: 8, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/8_kuok18.png' },
+        { number: 9, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/9_rqficb.png' },
+        { number: 10, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/10_btmivq.png' },
+        { number: 11, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/11_zxjz82.png' }
     ];
 
     function shuffleCards(array) {
@@ -159,6 +149,8 @@ export default function HomePage(root) {
             </div>
         `;
     }).join('');
+
+    
     
 
     root.innerHTML = `
@@ -209,27 +201,72 @@ export default function HomePage(root) {
     </div>
     `;
 
-    // Card flipping
-    const cards = root.querySelectorAll('.card');
+    
     let flippedCards = [];
+    let betPlaced = false;
 
+    // const cardsContainer = document.querySelector('.cards-container');
+    const cards = Array.from(document.querySelectorAll('.card'));
+
+    
+    const placeBetButton = document.querySelector('.bet');
+    placeBetButton.addEventListener('click', () => {
+        if (!betPlaced) {
+            betPlaced = true;
+            alert("✅ Bet placed! Now flip exactly 3 cards.");
+            console.log("✅ Bet placed. Start flipping cards.");
+        } else {
+            if (flippedCards.length !== 3) {
+                console.error("❌ You must select exactly 3 cards to place a bet.");
+                alert("You must select exactly 3 cards to place a bet.");
+                return;
+            }
+
+            const chosenNumbers = flippedCards.map(card => parseInt(card.getAttribute('data-card-number'), 10));
+            const betAmount = 20; 
+            const gameId = sessionStorage.getItem("gameId"); 
+
+            if (!gameId) {
+                console.error("❌ No active game found.");
+                alert("No active game found. Please start a new game.");
+                return;
+            }
+
+            console.log(`🎯 Placing bet with numbers: ${chosenNumbers.join(', ')}, Amount: ${betAmount}, Game Id: ${gameId}`);
+
+            webSocketService.send("place_bet", { gameId, chosenNumbers, betAmount });
+
+           
+            flippedCards.forEach(card => card.classList.remove('flip'));
+            flippedCards = [];
+            betPlaced = false;
+        }
+    });
+
+    // Card flipping
     cards.forEach(card => {
         card.addEventListener('click', () => {
-            if (!card.classList.contains('flip') && flippedCards.length < 3) {
-                
+            if (!betPlaced) {
+                alert("🚫 You must place a bet before flipping cards!");
+                console.error("❌ You must place a bet before flipping cards.");
+                return;
+            }
+
+            if (flippedCards.length < 3 && !flippedCards.includes(card)) {
                 card.classList.add('flip');
                 flippedCards.push(card);
-    
-                if (flippedCards.length === 3) {
-                    
-                    setTimeout(() => {
-                        flippedCards.forEach(flippedCard => flippedCard.classList.remove('flip'));
-                        flippedCards = [];
-                    }, 1000); 
-                }
+                console.log(`🃏 Card flipped: ${card.getAttribute('data-card-number')}`);
             }
         });
     });
+
+    webSocketService.on("game_end", () => {
+        betPlaced = false;
+        flippedCards = [];
+        shuffleCards();
+    });
+
+    
 
     //  Manual refresh button
     const refreshButton = document.createElement("button");
