@@ -32,16 +32,16 @@ const activeUsers = new Map();
 
 startGameService(io);
 
-// Middleware to check authentication for each request
 function isAuthenticated(socket) {
-    if (!socket.user || !socket.user.user) {
+    if (!socket.user || !socket.user.id) {
         console.log(`❌ Unauthorized access attempt from socket: ${socket.id}`);
         socket.emit("error", { message: "Unauthorized. Please log in." });
         return false;
     }
-    console.log(`✅ User authenticated: ${socket.user.user.id}`);
+    console.log(`✅ User authenticated: ${socket.user.id}`);
     return true;
 }
+
 
 io.on("connection", (socket) => {
     console.log(`✅ New connection: ${socket.id}`);
@@ -72,6 +72,8 @@ io.on("connection", (socket) => {
 
             if (response.success) {
                 console.log(`✅ Login successful for: ${username}`);
+
+                socket.user = response.user;
                 activeUsers.set(socket.id, response.user);
             } else {
                 console.log("❌ Login failed: Incorrect credentials");
@@ -90,26 +92,33 @@ io.on("connection", (socket) => {
                 console.log("❌ Authentication failed: Invalid or expired token");
                 return socket.emit("auth_response", { success: false, message: "Invalid or expired token" });
             }
-
+    
             console.log(`✅ Authentication successful for user ID: ${decodedUser.user.id}`);
-            socket.user = decodedUser;
+            socket.user = decodedUser.user; 
             socket.join("authenticated");
-            socket.emit("auth_response", { success: true, user: decodedUser });
+            socket.emit("auth_response", { success: true, user: decodedUser.user });
         });
     });
+    
 
-    socket.on("user_balance", (data = {}) => {  // ✅ Prevents `undefined`
+    socket.on("user_balance", () => { 
         console.log("💰 Checking user balance...");
+
+        console.log("Debug - socket.user:", socket.user);
     
-        if (!isAuthenticated(socket)) return;
+        if (!socket.user) {
+            console.log("❌ Not authenticated");
+            return socket.emit("error", { message: "User not authenticated" });
+        }
     
-        // Check if userId is provided by frontend or fallback to authenticated session
-        const userId = data?.userId || (socket.user && socket.user.user ? socket.user.user.id : undefined);
+        const userId = socket.user?.id;
     
         if (!userId) {
-            console.log(`❌ Error: Missing userId. Received data:`, data, ` | Socket user:`, socket.user);
+            console.log("❌ Error: Missing userId from socket data.");
             return socket.emit("error", { message: "User ID is required to fetch balance" });
         }
+    
+        console.log(`✅ Extracted userId from socket: ${userId}`);
     
         getUserBalance(userId, (err, balance) => {
             if (err) {
@@ -122,7 +131,8 @@ io.on("connection", (socket) => {
         });
     });
     
-
+    
+    
 
     // PLACE BET
     socket.on("place_bet", ({ gameId, chosenNumbers, betAmount }) => {
@@ -130,7 +140,8 @@ io.on("connection", (socket) => {
 
         if (!isAuthenticated(socket)) return;
 
-        const userId = socket.user.user.id;
+        const userId = socket.user?.id;
+
 
         placeBet(userId, gameId, chosenNumbers, (err, result) => {
             if (err) {
@@ -182,8 +193,8 @@ io.on("connection", (socket) => {
     
                     console.log(`🔄 Updated prize pool for next game: ${updatedPrizePool}`);
     
-                    // SEND UPDATED PRIZE POOL TO ALL CONNECTED CLIENTS
-                    io.emit("prize_pool_response", { success: true, prizePool: updatedPrizePool });
+                    // SEND UPDATED PRIZE POOL TO THE SAME CLIENT
+                    socket.emit("prize_pool_response", { success: true, prizePool: updatedPrizePool });
                 });
             });
         });
@@ -263,7 +274,8 @@ io.on("connection", (socket) => {
         console.log(`User ${socket.user?.user?.id} buying ${amount} coins...`);
          if (!isAuthenticated(socket)) return;
 
-         const userId = socket.user.user.id;
+        //  console.log("Debug - socket.user:", socket.user.user.id);
+         const userId = socket.user?.id;
 
          strikeStore(userId, amount, (err,result) => {
             if (err) {
