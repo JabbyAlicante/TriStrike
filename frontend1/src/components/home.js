@@ -26,6 +26,8 @@ export default function HomePage(root) {
         webSocketService.send("user_balance", {});
     });
 
+    
+
 
     //  Timer update 
     webSocketService.on("game_update", (response) => {
@@ -51,38 +53,73 @@ export default function HomePage(root) {
         }
 
         if (response.winningNumber) {
-            // console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
-    
+            console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
+            
             const winningDigits = String(response.winningNumber).split('-').map(Number);
-    
             const headerCards = document.querySelector('.header .logo .cards');
-    
+            
             if (headerCards) {
                 headerCards.innerHTML = '';
-    
-               
+            
                 winningDigits.forEach(digit => {
                     const cardFace = cardFaces.find(card => card.number === digit);
                     if (cardFace) {
                         const img = document.createElement('img');
-                        img.src = cardFace.url;
+                        img.src = 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png';
                         img.alt = `Card ${digit}`;
+                        img.setAttribute('data-card-number', digit);
                         headerCards.appendChild(img);
                     }
                 });
             }
+        
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    if (flippedCards.length < 3 && !flippedCards.includes(card)) {
+                        card.classList.add('flip');
+                        flippedCards.push(card);
+        
+                        const chosenNumber = parseInt(card.getAttribute('data-card-number'), 10);
+                        console.log(`🃏 Card flipped: ${chosenNumber}`);
+        
+                       
+                        if (winningDigits.includes(chosenNumber)) {
+                            const headerCard = headerCards.querySelector(`[data-card-number="${chosenNumber}"]`);
+                            if (headerCard) {
+                                const matchingFace = cardFaces.find(card => card.number === chosenNumber);
+                                headerCard.src = matchingFace.url; 
+                                console.log(`🎯 Correct match! Showing card ${chosenNumber}`);
+        
+                                
+                                if (!matchedCards.includes(chosenNumber)) {
+                                    matchedCards.push(chosenNumber);
+                                }
+        
+                                
+                                flippedCards = flippedCards.filter(card => 
+                                    parseInt(card.getAttribute('data-card-number'), 10) !== chosenNumber
+                                );
+                            }
+                        }
+                    }
+        
+                  
+                    if (flippedCards.length === 3) {
+                        setTimeout(() => {
+                            flippedCards.forEach(card => {
+                                const cardNumber = parseInt(card.getAttribute('data-card-number'), 10);
+                                if (!matchedCards.includes(cardNumber)) {
+                                    card.classList.remove('flip');
+                                }
+                            });
+                            flippedCards = [];
+                        }, 1000);
+                    }
+                });
+            });
         } else {
             console.error("⚠️ Fetching Winning Number failed");
         }
-
-        // Game id
-        if (response.gameId) {
-            // console.log(`🎯 Game started! Game ID: ${response.gameId}`);
-            sessionStorage.setItem('gameId', response.gameId);
-        } else {
-            console.error("❌ No gameId received!");
-        }
-
     });
 
     
@@ -125,18 +162,22 @@ export default function HomePage(root) {
         { number: 11, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/11_zxjz82.png' }
     ];
 
-    function shuffleCards(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-    }
-
     const allCardFaces = [
         ...cardFaces, 
         ...cardFaces.slice(0, cardCount - cardFaces.length)
     ];
-    shuffleCards(allCardFaces);
+    
+
+    // function shuffleCards() {
+        
+    //     for (let i = allCardFaces.length - 1; i > 0; i--) {
+    //         const j = Math.floor(Math.random() * (i + 1));
+    //         [allCardFaces[i], allCardFaces[j]] = [allCardFaces[j], allCardFaces[i]];
+    //     }
+    // }
+    // shuffleCards(allCardFaces);
+
+    
     
     const cardsHTML = Array.from({ length: cardCount }, (_, index) => {
         const card = allCardFaces[index % allCardFaces.length]; 
@@ -169,8 +210,8 @@ export default function HomePage(root) {
                     <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="User Profile" />
                     <div class="dropdown" id="dropdown">
                         <ul>
-                            <li id="dashboard">Dashboard</li>
-                            <li id="leaderboard">Leaderboard</li>
+                            <li id="coinstore">Coin Store</li>
+                            
                             <li id="logout">Logout</li>
                         </ul>
                     </div>
@@ -189,7 +230,7 @@ export default function HomePage(root) {
         </section>
 
         <div class="bottom-nav">
-            <div class="money">Balance: --</div>
+            <div class="money">💰Balance: --</div>
             <div class="prize-pool">
                 <h1 class="pp-name">Prize Pool</h1>
                 <h1 class="prize">--</h1>
@@ -200,28 +241,25 @@ export default function HomePage(root) {
     </div>
     `;
 
-    
     let flippedCards = [];
+    let matchedCards = [];
     let betPlaced = false;
 
-    // const cardsContainer = document.querySelector('.cards-container');
     const cards = Array.from(document.querySelectorAll('.card'));
-
-    
     const placeBetButton = document.querySelector('.bet');
+
     placeBetButton.addEventListener('click', () => {
         if (!betPlaced) {
-            betPlaced = true;
-            alert("✅ Bet placed! Now flip exactly 3 cards.");
-            console.log("✅ Bet placed. Start flipping cards.");
-        } else {
             if (flippedCards.length !== 3) {
                 console.error("❌ You must select exactly 3 cards to place a bet.");
                 alert("You must select exactly 3 cards to place a bet.");
                 return;
             }
 
-            const chosenNumbers = flippedCards.map(card => parseInt(card.getAttribute('data-card-number'), 10));
+            const chosenNumbers = flippedCards.map(card => 
+                parseInt(card.getAttribute('data-card-number'), 10)
+            );
+
             const betAmount = 20; 
             const gameId = sessionStorage.getItem("gameId"); 
 
@@ -235,56 +273,36 @@ export default function HomePage(root) {
 
             webSocketService.send("place_bet", { gameId, chosenNumbers, betAmount });
 
-           
-            flippedCards.forEach(card => card.classList.remove('flip'));
-            flippedCards = [];
-            betPlaced = false;
+            // ✅ Lock bet once placed
+            betPlaced = true;
+            alert("✅ Bet placed! Good luck!");
+
+            
+            setTimeout(() => {
+                flippedCards.forEach(card => {
+                    const cardNumber = parseInt(card.getAttribute('data-card-number'), 10);
+                    if (!matchedCards.includes(cardNumber)) {
+                        card.classList.remove('flip');
+                    }
+                });
+                flippedCards = [];
+                betPlaced = false; 
+            }, 1000);
+        } else {
+            console.error("❌ Bet already placed!");
+            alert("You have already placed a bet for this round.");
         }
     });
 
-    // Card flipping
-    cards.forEach(card => {
-        card.addEventListener('click', () => {
-            if (!betPlaced) {
-                alert("🚫 You must place a bet before flipping cards!");
-                console.error("❌ You must place a bet before flipping cards.");
-                return;
-            }
-
-            if (flippedCards.length < 3 && !flippedCards.includes(card)) {
-                card.classList.add('flip');
-                flippedCards.push(card);
-                console.log(`🃏 Card flipped: ${card.getAttribute('data-card-number')}`);
-            }
-        });
-    });
-
-    webSocketService.on("game_end", () => {
-        betPlaced = false;
-        flippedCards = [];
-        shuffleCards();
-    });
-
-    
-
     //  Manual refresh button
-    const refreshButton = document.createElement("button");
-    refreshButton.textContent = "🔄 Refresh Data";
-    refreshButton.classList.add("refresh-btn");
-    refreshButton.addEventListener("click", () => {
-        console.log("🔄 Manually refreshing game data...");
-        webSocketService.send("game_update", {});
-        webSocketService.send("latest_game_response", {});
-        webSocketService.send("user_balance", {});
-    });
-    root.appendChild(refreshButton);
+    
 
     setTimeout(() => {
         const userProfile = root.querySelector('.user-profile');
         const dropdown = root.querySelector('.dropdown');
         const logoutButton = root.querySelector('#logout');
-        const dashButton = root.querySelector('#dashboard');
-        const leaderButton = root.querySelector('#leaderboard');
+        const coinButton = root.querySelector('#coinstore');
+        // const historyButton = root.querySelector('#history');
 
         if (userProfile && dropdown) {
             userProfile.addEventListener('click', (event) => {
@@ -305,10 +323,10 @@ export default function HomePage(root) {
             });
         }
 
-        if (dashButton) {
-            dashButton.addEventListener('click', () => {
+        if (coinButton) {
+            coinButton.addEventListener('click', () => {
                 console.log('Redirecting to dashboard...');
-                window.location.href = '/';
+                window.location.href = '/store';
             });
         }
 
