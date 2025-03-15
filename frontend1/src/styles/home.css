@@ -8,7 +8,7 @@
     color: #fff;
     background: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741913080/TriStrike_Background-less_vlo5ba.png') no-repeat center center fixed;
     background-size: cover;
-    height: 100vh;
+    height: auto;
     max-width: 100%;
     width: 100%;
     font-family: 'Playfair Display', serif;
@@ -53,18 +53,18 @@
     text-align: right;
 }
 
-.info .money,
-.info .time {
+ .money,
+.time {
     font-size: 25px;
     margin: 5px 0;
 }
 
-.info .icons {
+.icons {
     display: flex;
     justify-content: flex-end;
 }
 
-.info .icons img {
+.icons img {
     width: 10px;
     height: 10px;
     margin-left: 5px;
@@ -87,9 +87,7 @@
     margin: 0 auto;
 }
 
-.empty {
-    height: 55px;
-}
+
 
 .user-profile {
     position: relative;
@@ -188,33 +186,44 @@
     background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png');
 }
 
-.bet-button {
+.bottom-nav {
     width: 100%;
-    bottom: 25px;
-    position: absolute;
+    bottom: 0;
+    position: fixed;
     text-align: center;
-    padding-top: 1rem;
+    padding: 10px 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    background-color: #0A0614;
+    padding-right: 25px;
+    padding-left: 15px;
 }
 
 .bet {
     width: 7rem;
     height: 2.5rem;
-    background-color: #0A0614;
-    border: 2px solid #301D6C;
+    background-color: #E9BD65;
+    border: 2px solid #FFCF6B;
     border-radius: 11px;
-    filter: drop-shadow(1px 1px 2px #301D6C);
+    filter: drop-shadow(1px 1px 2px #FFCF6B);
     font-family: 'Marcellus SC', serif;
-    color: #E9BD65;
+    color: #301D6C;
     font-size: 22px;
-    margin: 0 auto;
+    margin: 0 0;
+}
+
+.bet:hover {
+    filter: drop-shadow(1px 1px 5px #FFCF6B);
+    background-color: #0A0614;
+    color: #FFCF6B;
 }
 
 .prize-pool {
-    display: grid;
-    grid-template-columns: 50% 50%;
+    display: flex;
     align-items: center;
     justify-items: center;
-    background-color: #0A0614;
 }
 
 .pp-name, .prize {

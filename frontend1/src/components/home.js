@@ -1,4 +1,5 @@
 import '../styles/home.css';
+import '../styles/home_mq.css';
 import webSocketService from '../core/websocketClient';
 
 export default function HomePage(root) {
@@ -31,7 +32,7 @@ export default function HomePage(root) {
         // console.log("📦 Game update received:", response);
     
         if (typeof response.timer !== "undefined") {
-            console.log(`🕒 Timer update received: ${response.timer}`);
+            // console.log(`🕒 Timer update received: ${response.timer}`);
     
            
             setTimeout(() => {
@@ -50,7 +51,7 @@ export default function HomePage(root) {
         }
 
         if (response.winningNumber) {
-            console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
+            // console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
     
             const winningDigits = String(response.winningNumber).split('-').map(Number);
     
@@ -91,7 +92,6 @@ export default function HomePage(root) {
         if (typeof response.balance !== "undefined") {
             console.log(`💰 Balance update received: ${response.balance}`);
     
-            // Use querySelector for class-based selection
             const balElement = document.querySelector(".money"); 
             if (!balElement) {
                 console.error("❌ Error: Balance element not found in the DOM");
@@ -180,14 +180,7 @@ export default function HomePage(root) {
             </div>
         </header>
 
-        <div class="prize-pool">
-            <h1 class="pp-name">Prize Pool</h1>
-            <h1 class="prize">--</h1>
-        </div>
-
-        <div class="empty">
-            <div class="money">Balance: --</div>
-        </div>
+        
 
         <section class="game-board">
             <div class="card-grid">
@@ -195,8 +188,14 @@ export default function HomePage(root) {
             </div>
         </section>
 
-        <div class="bet-button">
+        <div class="bottom-nav">
+            <div class="money">Balance: --</div>
+            <div class="prize-pool">
+                <h1 class="pp-name">Prize Pool</h1>
+                <h1 class="prize">--</h1>
+            </div>
             <button class="bet">Place bet</button>
+            
         </div>
     </div>
     `;
@@ -284,6 +283,8 @@ export default function HomePage(root) {
         const userProfile = root.querySelector('.user-profile');
         const dropdown = root.querySelector('.dropdown');
         const logoutButton = root.querySelector('#logout');
+        const dashButton = root.querySelector('#dashboard');
+        const leaderButton = root.querySelector('#leaderboard');
 
         if (userProfile && dropdown) {
             userProfile.addEventListener('click', (event) => {
@@ -303,5 +304,14 @@ export default function HomePage(root) {
                 window.location.href = '/';
             });
         }
+
+        if (dashButton) {
+            dashButton.addEventListener('click', () => {
+                console.log('Redirecting to dashboard...');
+                window.location.href = '/';
+            });
+        }
+
+
     }, 0);
 }

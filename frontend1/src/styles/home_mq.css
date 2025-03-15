@@ -1,0 +1,40 @@
+@media (min-width: 1024px) {
+    .cards img {
+        width: 15%;
+    }
+
+    .card-grid {
+        grid-template-columns: repeat(5, 1fr);
+        padding: 1rem;
+    }
+
+    .game-board {
+        padding: 2px;
+        display: flex;
+        justify-content: center;
+        max-width: 100%;
+    }
+
+    .timer {
+        font-size: 30px;
+    }
+
+    .user-profile img {
+        max-width: 15%;
+    }
+
+    .bottom-nav {
+        height: 6rem;
+    }
+
+    .money, .prize, .pp-name {
+        font-size: 30px;
+    }
+
+    .bet {
+        width: 13rem;
+        height: 4rem;
+        font-size: 30px;
+    }
+
+}
