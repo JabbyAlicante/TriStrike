@@ -53,7 +53,7 @@ background-repeat: no-repeat;
     cursor: pointer;
     transition: all 0.3s ease;
     width: 230px;
-    display: grid;
+    display: flex;
     justify-self: center;
 }
 
@@ -64,6 +64,10 @@ background-repeat: no-repeat;
     color: #301D6C;
     transition: all 0.3s ease;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+form {
+    align-items: center;
 }
 
 .alert {
