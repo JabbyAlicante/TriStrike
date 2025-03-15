@@ -300,7 +300,7 @@ export default function HomePage(root) {
             logoutButton.addEventListener('click', () => {
                 console.log('🚪 Logging out...');
                 localStorage.removeItem('authToken');
-                window.location.href = '/login';
+                window.location.href = '/';
             });
         }
     }, 0);
