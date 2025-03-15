@@ -96,7 +96,7 @@
 }
 
 .user-profile img {
-    max-width: 30%;
+    max-width: 10%;
     background-color: #E9BD65;
     border: 1px solid #E9BD65;
     border-radius: 50px;
@@ -234,59 +234,3 @@
 
 
 
-@media (min-width: 1440px) {
-
-    .cards img {
-        width: 15%;
-    }
-    
-    .user-profile img {
-        max-width: 10%;
-    }
-
-    .money,
-    .info .time {
-        font-size: 40px;
-        margin: 5px 0;
-    }
-
-    .money {
-        margin-left: 1rem;
-    }
-
-    
-    .game-board {
-        padding-top: 1.5rem;
-    }
-
-    .pp-name, .prize {
-        font-family: 'Marcellus SC', serif;
-        font-size: 35px;
-        color: #FFCF6B;
-    }
-    
-    .logo img {
-        width: 120px;
-        height: auto;
-        margin-right: 5px;
-    }
-
-    .user-profile img {
-        max-width: 5%;
-    }
-
-    .bet-button {
-    width: 100%;
-    bottom: 25px;
-    position: absolute;
-    text-align: center;
-    padding-top: 1rem;
-    }
-
-    .bet {
-        width: 20rem;
-        height: 5rem;
-        background-color: #0A0614;
-        font-size: 50px;
-    }
-}
