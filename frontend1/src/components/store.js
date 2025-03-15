@@ -89,24 +89,38 @@ export default function store(root) {
     webSocketService.fetchLatestData();
 
 
-    // webSocketService.on("user_balance", (response) => {
-    //     console.log("📦 User balance update received:", response);
+    webSocketService.on("user_balance", (response) => {
+        console.log("📦 User balance update received:", response);
 
-    //     if (typeof response.balance !== "undefined") {
-    //         console.log(`💰 Balance update received: ${response.balance}`);
+        if (typeof response.balance !== "undefined") {
+            console.log(`💰 Balance update received: ${response.balance}`);
 
-    //         const balanceDisplay = document.getElementById("balance-display");
-    //         if (balanceDisplay) {
-    //             console.log("✅ Updating balance text...");
-    //             balanceDisplay.textContent = `Balance: ${response.balance} coins`;
-    //         } else {
-    //             console.error("❌ Error: Balance element not found in the DOM");
-    //         }
-    //     } else {
-    //         console.error("⚠️ Balance update failed: Invalid response structure");
-    //     }
-    // });
+            const balanceDisplay = document.getElementById("balance-display");
+            if (balanceDisplay) {
+                console.log("✅ Updating balance text...");
+                balanceDisplay.textContent = `Balance: ${response.balance} coins`;
+            } else {
+                console.error("❌ Error: Balance element not found in the DOM");
+            }
+        } else {
+            console.error("⚠️ Balance update failed: Invalid response structure");
+        }
+    });
 
+    
+    webSocketService.on("buy_coins_response", (response) => {
+        console.log("📦 Buy coins update received:", response);
+    
+        if (response.success) {
+           
+            const balanceElement = document.getElementById('balance-display');
+            balanceElement.textContent = `Balance: ${response.balance} coins`;
+            
+            alert(`Purchase successful! Your new balance is ${response.balance} coins.`);
+        } else {
+            alert(`Purchase failed: ${response.errorMessage}`);
+        }
+    });
     
 
    
@@ -114,14 +128,15 @@ export default function store(root) {
         const modal = document.getElementById('paymentModal');
         modal.style.display = 'block';
 
+
         const form = document.getElementById('paymentForm');
         form.onsubmit = (e) => {
             e.preventDefault();
             const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
 
-           
-            webSocketService.send("purchase_coins", {
-                userId,
+            const userId = localStorage.getItem("userId");
+            webSocketService.send("buy_coins", {
+        
                 amount,
                 paymentMethod,
             });
@@ -131,6 +146,7 @@ export default function store(root) {
         };
     };
 
+    
     
     window.closeModal = () => {
         const modal = document.getElementById('paymentModal');

@@ -120,6 +120,12 @@ export default function HomePage(root) {
         } else {
             console.error("⚠️ Fetching Winning Number failed");
         }
+        if (response.gameId) {
+            // console.log(`🎯 Game started! Game ID: ${response.gameId}`);
+            sessionStorage.setItem('gameId', response.gameId);
+        } else {
+            console.error("❌ No gameId received!");
+        }
     });
 
     
@@ -262,6 +268,7 @@ export default function HomePage(root) {
 
             const betAmount = 20; 
             const gameId = sessionStorage.getItem("gameId"); 
+            console.log(gameId);
 
             if (!gameId) {
                 console.error("❌ No active game found.");
@@ -273,7 +280,6 @@ export default function HomePage(root) {
 
             webSocketService.send("place_bet", { gameId, chosenNumbers, betAmount });
 
-            // ✅ Lock bet once placed
             betPlaced = true;
             alert("✅ Bet placed! Good luck!");
 

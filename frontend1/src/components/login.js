@@ -68,8 +68,14 @@ export default function LoginPage(root) {
   webSocketService.on("login_response", (response) => {
     if (response.success) {
       showAlert("✅ Login successful! Redirecting...");
+      console.log("Login respone:", response);
 
       localStorage.setItem("authToken", response.token);
+      
+      const userId = response.user.id;
+      console.log("User", userId);
+
+      sessionStorage.setItem("userId", userId);
 
       webSocketService.send("authenticate", response.token);
 

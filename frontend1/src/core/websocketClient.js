@@ -12,6 +12,7 @@ class WebSocketService {
     connect() {
         if (!this.socket) {
             const token = localStorage.getItem("authToken");
+            // const userId = socket.user?.id;
 
             console.log(`Attempting to connect with token: ${token}`);
             this.socket = io(WS_URL, {
