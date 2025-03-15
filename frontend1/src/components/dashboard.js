@@ -2,7 +2,7 @@ import '../styles/dashboard.css';
 import webSocketService from '../core/websocketClient';
 
 export default function DashboardPage(root) {
-  // Set up the HTML structure
+
   root.innerHTML = `
     <div class="user-dashboard">
       <h2>Buy Coins</h2>
