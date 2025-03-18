@@ -155,8 +155,9 @@ io.on("connection", (socket) => {
 
     socket.on("prize_pool", (data) => {
         if (!isAuthenticated(socket)) return;
-        console.log("🔍 Received prize_pool event with data:", data);
-    
+        console.log(" Received prize_pool event with data:", data);
+        
+        console.log(" Received data:", data);
         const { gameId } = data;
     
         if (!gameId) {
@@ -279,7 +280,7 @@ io.on("connection", (socket) => {
 
          strikeStore(userId, amount, (err,result) => {
             if (err) {
-                console.error("Error buying coins", err);
+                console.error("Error buying coins", err);``
                 return socket.emit("buy_coins_response", { success: false, message: "failed to buy coins"});
             }
 

@@ -15,12 +15,12 @@ export function initializeGameState() {
         FROM games WHERE status = 'ongoing' ORDER BY id DESC LIMIT 1`, 
     (err, results) => {
         if (err) {
-            console.error("❌ Database error while fetching game state:", err);
+            console.error(" Database error while fetching game state:", err);
             return;
         }
 
         if (results.length === 0) {
-            console.warn("⚠ No active game found. Creating a new one...");
+            console.warn("No active game found. Creating a new one...");
             createNewGame();
         } else {
             let elapsed = results[0].elapsed || 0;
@@ -137,7 +137,7 @@ function generateWinningNumber() {
     let numbers = new Set();
 
     while (numbers.size < 3)  {
-        numbers.add(Math.floor(Math.random() * 12) + 1);
+        numbers.add(Math.floor(Math.random() * 11) + 1);
     }
 
     return Array.from(numbers).join('-');

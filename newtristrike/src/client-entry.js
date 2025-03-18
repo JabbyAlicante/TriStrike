@@ -1,0 +1,1 @@
+// di q pa alam

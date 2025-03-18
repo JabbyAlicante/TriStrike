@@ -1,0 +1,549 @@
+@import url('https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Playfair+Display:wght@400;700&display=swap');
+
+
+
+@media (min-width: 375px) {
+  .welcome-title {
+    margin-top: 14rem;
+    padding-bottom: 0;
+  }
+  
+  .tagline {
+    top: 13rem;
+    font-size: 20px;
+  }
+
+  .horo-wheel {
+    top: 10vh;
+  }
+  .horo-wheel img {
+    max-width: 120%;
+  }
+
+  .card-logo {
+    width: 250px;
+    height: 250px;
+    top: 130px;
+  }
+
+  .play-button {
+    bottom: 15px;
+  }
+
+  .play-start {
+    width: 10rem;
+    height: 3rem;
+    font-size: 28px;
+  }
+
+  .play-start:hover {
+    width: 12rem;
+    height: 4rem;
+    font-size: 30px;
+  }
+
+  .about-container {
+    height: 85vh;
+  }
+
+  .about-title .strike {
+  clip-path: inset(0 13% 0 30%);
+  }
+
+  .about-title img {
+    height: 300px;
+    position: relative;
+  }
+
+  .a_open {
+    font-size: 25px;
+    margin-top: 5rem;
+  }
+
+  .desc {
+    font-size: 18px;
+  }
+
+  .logo-photo img {
+    max-width: 250%;
+  }
+}
+
+
+@media (min-width: 425px) {
+  .welcome-title {
+    margin-top: 12rem;
+    padding-bottom: 0;
+  }
+  
+  .tagline {
+    top: 15rem;
+    font-size: 20px;
+  }
+
+  .horo-wheel {
+    top: 11vh;
+  }
+  .horo-wheel img {
+    max-width: 110%;
+  }
+
+  .card-logo {
+    width: 280px;
+    height: 280px;
+    top: 90px;
+  }
+}
+
+@media (min-width: 768px) {
+  
+  body {
+    overflow-x: hidden;
+  }
+
+  #landing-id {
+    height: 100vh;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .landing-container {
+    background-image: url('https://res.cloudinary.com/dkympjwqc/image/upload/v1741097142/TriStrike_Backgrounds_c5lgsn.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* background-color: aqua; */
+  }
+
+  .mini-logo1 {
+    display: flex;
+    position: fixed;
+    margin-left: 1rem;
+    top: 0;
+  }
+
+  .mini-logo1 img {
+    max-width: 13%;
+  }
+
+  .welcome-title img {
+    margin-top: -10rem;
+    padding-bottom: 0;
+    
+  }
+  
+  .tagline {
+    top: 13rem;
+    font-size: 20px;
+  }
+
+  .horo-wheel {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%) translateX(-2%);
+    width: 100vh;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    overflow-x: hidden;
+  }
+  
+  .horo-wheel img {
+    max-width: 100%;
+    margin-right: 2rem;
+    overflow-x: hidden;
+  }
+
+  .card-logo {
+    display: none;
+  }
+
+  .welcome-title {
+    height: 400px;
+    margin-top: 1rem;
+    margin-bottom: 8rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .welcome-title img {
+    width: 100%;
+    margin-left: -5rem;
+    clip-path: inset(0 0 0 6%);
+  }
+
+  .welcome-title .tri {
+    clip-path: inset(0 73% 0 0);
+  }
+  
+  .welcome-title .strike { 
+    clip-path: inset(0 0 0 28%);
+  }
+
+  .tagline {
+    margin-top: 7rem;
+    font-size: 25px;
+    margin-left: 6rem;
+  }
+
+  .play-button {
+    bottom: 7rem;
+
+  }
+
+  .play-start {
+    width: 12rem;
+    height: 3.5rem;
+    font-size: 35px;
+  }
+
+  .play-start:hover {
+    width: 14rem;
+    height: 4rem;
+    font-size: 40px;
+  }
+
+  .about-container {
+    height: 100vh;
+    overflow: hidden;
+    grid-template-columns: 1fr;
+  }
+
+  .mini-logo {
+    display: none;
+  }
+
+  .about-title {
+    height: 200px;
+    overflow-y: hidden;
+  }
+
+  .about-title .strike {
+  clip-path: inset(0 13% 0 20%);
+  }
+
+  .about-title img {
+    height: 500px;
+    padding-top: 1rem;
+    position: relative;
+    /* z-index: 1; */
+  }
+
+  .a_open {
+    font-size: 25px;
+    margin-top: 1rem;
+    margin-left: 3rem;
+    margin-right: 20rem;
+    text-align: center;
+  }
+
+  .desc {
+    font-size: 22px;
+    margin-left: 2rem;
+    margin-right: 20rem;
+  }
+
+  .right-side, .right-side img {
+    display: flex;
+  }
+
+  .left-side {
+    position: absolute;
+  }
+
+  .right-side1 {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding-top: 0;
+    /* padding-left: 20rem; */
+    padding-bottom: 150rem;
+    /* z-index: 0; */
+  }
+
+  .logo-photo1 img {
+    max-width: 100%;
+    clip-path: inset(0 0 0 0);
+    position: relative;
+    display: flex;
+    object-fit: none;
+    margin-left: 22rem;
+    /* z-index: -1; */
+  }
+}
+
+@media (min-width: 1024px) {
+  #landing-id {
+    height: 100vh;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+
+  .mini-logo1 {
+    display: flex;
+    position: fixed;
+    margin-left: 2rem;
+    margin-right: 0;
+    top: 0;
+  }
+
+  .horo-wheel {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%) translateX(-2%);
+    width: 100vh;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end;
+    /* align-items: center; */
+    overflow-x: hidden;
+  }
+  
+  .horo-wheel img {
+    max-width: 100%;
+    margin-right: -7rem;
+    overflow-x: hidden;
+  }
+
+  .card-logo {
+    display: none;
+  }
+
+  .welcome-title {
+    height: 400px;
+    margin-top: 5rem;
+    margin-bottom: 8rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .welcome-title img {
+    width: 80%;
+    margin-left: -22rem;
+    clip-path: inset(0 0 0 6%);
+    margin-top: -20rem;
+    padding-bottom: 0;
+  }
+
+
+  .welcome-title .tri {
+    clip-path: inset(0 30% 0 0);
+  }
+  
+  .welcome-title .strike { 
+    clip-path: inset(0 0 0 25%);
+  }
+
+  .tagline {
+    margin-top: 9rem;
+    margin-bottom: 0;
+    font-size: 40px;
+    margin-left: 13rem;
+  }
+
+  .play-button {
+    bottom: 4rem;
+    /* top: 15rem; */
+    margin-right: 28rem;
+  }
+
+  .play-start {
+    width: 15rem;
+    height: 4.5rem;
+    font-size: 45px;
+    border-radius: 18px;
+  }
+
+  .play-start:hover {
+    width: 17rem;
+    height: 5rem;
+    font-size: 55px;
+  }
+
+  .about-container {
+    height: 100vh;
+    overflow-x: hidden;
+    grid-template-columns: 50% 50%;
+  }
+
+  .mini-logo {
+    display: none;
+  }
+
+  .about-title {
+    height: 200px;
+    overflow-y: hidden;
+  }
+
+  .about-title .strike {
+  clip-path: inset(0 13% 0 20%);
+  }
+
+  .about-title img {
+    height: 500px;
+    padding-top: 0;
+    position: relative;
+    /* z-index: 1; */
+  }
+
+  .a_open {
+    font-size: 35px;
+    margin-top: 1rem;
+    margin-left: 3rem;
+    margin-right: 20rem;
+    text-align: center;
+  }
+
+  .desc {
+    font-size: 28px;
+    margin-left: 2rem;
+    margin-right: 20rem;
+  }
+
+  .right-side1, .right-side1 img {
+    display: none;
+  }
+
+  .left-side {
+    position: absolute;
+  }
+
+  .right-side {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding-top: 0;
+    /* padding-left: 20rem; */
+    padding-bottom: 150rem;
+    /* z-index: 0; */
+  }
+
+  .logo-photo img {
+    max-width: 100%;
+    clip-path: inset(0 0 0 0);
+    position: relative;
+    display: flex;
+    object-fit: none;
+    margin-left: 75rem;
+    /* z-index: -1; */
+  }
+}
+
+@media (min-width: 1440px) {
+  #landing-id {
+    height: 100vh;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .mini-logo1 {
+    display: flex;
+    position: fixed;
+    margin-left: 0;
+    margin-right: 18rem ;
+    top: 0;
+  }
+
+  .horo-wheel {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%) translateX(-2%);
+    width: 100vh;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end;
+    /* align-items: center; */
+    overflow-x: hidden;
+  }
+  
+  .horo-wheel img {
+    max-width: 100%;
+    margin-right: -9rem;
+    overflow-x: hidden;
+  }
+
+  .card-logo {
+    display: none;
+  }
+
+  .welcome-title {
+    height: 500px;
+    margin-top: 9rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .welcome-title img {
+    width: 70%;
+    margin-right: 22rem;
+    clip-path: inset(0 0 0 6%);
+    margin-top: -30rem;
+  }
+
+
+
+  .welcome-title .tri {
+    clip-path: inset(0 70% 0 0);
+  }
+  
+  .welcome-title .strike { 
+    clip-path: inset(0 0 0 20%);
+  }
+
+  .tagline {
+    margin-top: 11rem;
+    font-size: 55px;
+    margin-left: 23rem;
+  }
+
+
+  .play-button {
+    bottom: 10rem;
+    margin-right: 35rem;
+  }
+
+  .play-start {
+    width: 15rem;
+    height: 4.5rem;
+    font-size: 45px;
+    border-radius: 18px;
+  }
+
+  .play-start:hover {
+    width: 17rem;
+    height: 5rem;
+    font-size: 55px;
+  }
+}
+
+
+@media (min-width: 2560px) {
+
+  .landing-container {
+    background-color: aqua;
+  }
+
+  .horo-wheel {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%) translateX(-2%);
+    width: 100vh;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end;
+    /* align-items: center; */
+    overflow-x: hidden;
+  }
+  
+  .horo-wheel img {
+    max-width: 100%;
+    margin-right: 5rem;
+    overflow-x: hidden;
+  }
+}

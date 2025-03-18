@@ -250,6 +250,7 @@
                 alert(`✅ Bet placed successfully! Chosen combination: ${selectedNumbers.join("-")}`);
                 hasPlacedBet = true;
                 socket.emit("user_balance");
+                // console.log ("prizes hehe")
                 socket.emit("prize_pool", { gameId: response.gameId });
             } else {
                 alert("❌ Bet failed: " + response.message);
