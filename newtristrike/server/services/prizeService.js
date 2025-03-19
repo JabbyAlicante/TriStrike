@@ -1,6 +1,62 @@
 import db from "../config/db.js";
 import { addPrizeToWinner } from "./balanceService.js";
 
+export async function getTotalPrizePool(socket, gameId) {
+    if (!gameId) {
+        console.log("⚠️ Missing game ID");
+        socket.emit("prize_pool_response", {
+            success: false,
+            code: "MISSING_GAME_ID",
+            message: "Game ID is required"
+        });
+        return;
+    }
+
+    try {
+        const [results] = await db.query(
+            "SELECT SUM(amount) AS totalPrizePool FROM bets WHERE game_id = ?",
+            [gameId]
+        );
+
+        if (results.length > 0) {
+            const prizePool = results[0].totalPrizePool || 0;
+
+            console.log(`✅ Prize pool for game ${gameId}: ${prizePool}`);
+
+            socket.emit("prize_pool_response", {
+                success: true,
+                gameId,
+                prizePool,
+                message: `Prize pool fetched successfully`
+            });
+
+            return prizePool;
+        } else {
+            console.log(`⚠️ No prize pool data found for game ${gameId}`);
+
+            socket.emit("prize_pool_response", {
+                success: false,
+                code: "NO_PRIZE_POOL_DATA",
+                message: `No prize pool data found for game ${gameId}`
+            });
+
+            return 0;
+        }
+    } catch (err) {
+        console.error(`❌ Error fetching prize pool for game ${gameId}:`, err);
+
+        socket.emit("prize_pool_response", {
+            success: false,
+            code: "PRIZE_POOL_FETCH_ERROR",
+            message: "Error fetching prize pool",
+            error: err.message
+        });
+
+        throw err;
+    }
+}
+
+
 export async function distributePrizePool(socket, gameId) {
     if (!gameId) {
         socket.emit("prize_distribution", {
