@@ -10,7 +10,7 @@ import { signupUser, loginUser, verifyToken } from "./services/userService.js";
 import { initializeGameState, startGameService, getGameState } from './services/gameService.js';
 import { getUserBalance } from './services/balanceService.js';
 
-// ✅ Load environment variables first
+
 dotenv.config();
 
 const IS_PRODUCTION = process.env.ENV === 'production';

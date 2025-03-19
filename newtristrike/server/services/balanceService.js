@@ -1,7 +1,18 @@
 import db from "../config/db.js";
+import { verifyToken } from "./userService.js";
 
-// ✅ Get user balance
-export async function getUserBalance(socket, userId) {
+export async function getUserBalance(socket, token) {
+    const { success, user } = await verifyToken(token);
+    if (!success) {
+        socket.emit("balance_failed", {
+            success: false,
+            code: "INVALID_TOKEN",
+            message: "Invalid or expired token"
+        });
+        return;
+    }
+
+    const userId = user.id;
     console.log(`💰 Fetching balance for User ID: ${userId}`);
 
     try {
@@ -42,20 +53,29 @@ export async function getUserBalance(socket, userId) {
     }
 }
 
-// ✅ Deduct balance 
-export async function deductBalance(socket, userId, amount) {
-    console.log(`🛠 deductBalance() CALLED! Amount: ${amount}, User ID: ${userId}`);
-
+export async function deductBalance(socket, token, amount) {
     if (amount <= 0) {
         console.warn(`⚠ Invalid deduction amount: ${amount}`);
         socket.emit("balance_failed", {
             success: false,
             code: "INVALID_DEDUCTION_AMOUNT",
-            message: "Invalid deduction amount",
-            userId
+            message: "Invalid deduction amount"
         });
         return;
     }
+
+    const { success, user } = await verifyToken(token);
+    if (!success) {
+        socket.emit("balance_failed", {
+            success: false,
+            code: "INVALID_TOKEN",
+            message: "Invalid or expired token"
+        });
+        return;
+    }
+
+    const userId = user.id;
+    console.log(`🛠 deductBalance() CALLED! Amount: ${amount}, User ID: ${userId}`);
 
     try {
         const [results] = await db.query(
@@ -68,8 +88,7 @@ export async function deductBalance(socket, userId, amount) {
             socket.emit("balance_failed", {
                 success: false,
                 code: "USER_NOT_FOUND",
-                message: "User not found",
-                userId
+                message: "User not found"
             });
             return;
         }
@@ -90,7 +109,6 @@ export async function deductBalance(socket, userId, amount) {
             return;
         }
 
-        // Deduct balance
         await db.query(
             `UPDATE users SET balance = balance - ? WHERE id = ?`,
             [amount, userId]
@@ -112,24 +130,20 @@ export async function deductBalance(socket, userId, amount) {
         socket.emit("balance_failed", {
             success: false,
             code: "BALANCE_DEDUCTION_ERROR",
-            message: "Error deducting balance",
-            userId
+            message: "Error deducting balance"
         });
     }
 }
 
-// ✅ Add prize to winner
 export async function addPrizeToWinner(socket, userId, prizeAmount) {
     console.log(`🎯 Adding prize of ${prizeAmount} to User ID: ${userId}`);
 
     try {
-        // Add prize
         await db.query(
             `UPDATE users SET balance = balance + ? WHERE id = ?`,
             [prizeAmount, userId]
         );
 
-        // Get updated balance and username
         const newBalance = await getBalance(userId);
         const { username } = await getUserInfo(userId);
 
@@ -149,13 +163,11 @@ export async function addPrizeToWinner(socket, userId, prizeAmount) {
         socket.emit("prize_failed", {
             success: false,
             code: "PRIZE_ADDITION_ERROR",
-            message: "Error adding prize",
-            userId
+            message: "Error adding prize"
         });
     }
 }
 
-// const balance = await getBalance(userId);
 async function getBalance(userId) {
     const [result] = await db.query(`SELECT balance FROM users WHERE id = ?`, [userId]);
 
@@ -166,7 +178,6 @@ async function getBalance(userId) {
     return result[0].balance;
 }
 
-// const balance = await getUserInfo(userId);
 async function getUserInfo(userId) {
     const [result] = await db.query(
         `SELECT username FROM users WHERE id = ?`,

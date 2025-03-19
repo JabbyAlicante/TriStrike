@@ -18,7 +18,6 @@ export async function placeBet(userId, gameId, chosenNumbers) {
     }
 
     try {
-        // ✅ Check if the game exists and is ongoing
         const [game] = await db.query(
             `SELECT id, winning_num FROM games WHERE id = ? AND status = 'ongoing'`,
             [gameId]
@@ -39,7 +38,6 @@ export async function placeBet(userId, gameId, chosenNumbers) {
         const newBalance = await deductBalance(userId, betAmount);
         console.log(`💰 Balance deducted. New balance for User ${userId}: ${newBalance}`);
 
-        // ✅ Insert bet into database
         await db.query(
             `INSERT INTO bets (user_id, game_id, chosen_nums, amount) VALUES (?, ?, ?, ?)`, 
             [userId, gameId, chosenNumsString, betAmount]
@@ -56,7 +54,6 @@ export async function placeBet(userId, gameId, chosenNumbers) {
         if (JSON.stringify(winningCombination) === JSON.stringify(chosenCombination)) {
             console.log(`🏆 User ${userId} WON!`);
 
-            // ✅ 2x reward for a win
             const rewardAmount = betAmount * 2;
 
             const updatedBalance = await addPrizeToWinner(userId, rewardAmount);
@@ -83,7 +80,6 @@ export async function placeBet(userId, gameId, chosenNumbers) {
     } catch (err) {
         console.error("❌ Error placing bet:", err);
 
-        // ✅ Return specific error message based on the context
         if (err.code === 'INSUFFICIENT_BALANCE') {
             return { 
                 success: false, 
