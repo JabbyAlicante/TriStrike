@@ -38,11 +38,11 @@ JWT_SECRET=your-jwt-secret
 ## Running the Project
 ```npm run dev```
 ## Code Overview
-Backend (Express.js)
+### Backend (Express.js)
   - `server.js` – Sets up the Express server and listening from events in clients
   - `services`  – Manages the logic and websocket connections
   - `db.js`  – Handles MySQL connection and queries
-Frontend (Vanilla JS)
+### Frontend (Vanilla JS)
   - `components` – Contains logic and event emits (e.g., handling button clicks, sending data to the server via WebSocket).
   - `Core`  – Houses core functionality like `spa.js` (Single Page Application handling) and `websocketclients.js` (WebSocket connection logic).
   - `icons`  – Contains SVG files for logos and icons used in the UI.
