@@ -23,7 +23,6 @@ const generateToken = (user) => {
 
 const verifyTokenAsync = promisify(jwt.verify);
 
-// 🔹 Sign Up
 export const signupUser = async (socket, username, email, password) => {
     console.log(`📩 Signup request received - Username: ${username}, Email: ${email}`);
 
@@ -76,7 +75,6 @@ export const signupUser = async (socket, username, email, password) => {
     }
 };
 
-// 🔹 Log In
 export const loginUser = async (socket, username, password) => {
     console.log(`📩 Login request received - Username: ${username}`);
 
@@ -97,7 +95,6 @@ export const loginUser = async (socket, username, password) => {
             });
             return;
         }
-
         const user = results[0];
 
         const isMatch = await bcrypt.compare(password, user.pass_hash);
@@ -111,7 +108,6 @@ export const loginUser = async (socket, username, password) => {
             });
             return;
         }
-
         delete user.pass_hash;
 
         console.log("Generating token...");
