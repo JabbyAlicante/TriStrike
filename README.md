@@ -57,5 +57,5 @@ JWT_SECRET=your-jwt-secret
 | `main.js` | The main JavaScript file that initializes the app and sets up core functionality. |
 
 # Contributors
-Alicante, Jabby L.
-Pineda, Geri Greizelle
+- Alicante, Jabby L.
+- Pineda, Geri Greizelle
