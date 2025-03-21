@@ -94,38 +94,54 @@ async function createCustomServer() {
       }
     });
 
-    socket.on('get-game-state', () => {
-      getGameState((state) => {
-        console.log("📡 Sending game state:", state);
-        if (state) {
-          socket.emit('game_update', {
-            timer: state.timer,
-            winningNumber: state.winningNumber
-          });
-        } else {
-          socket.emit('game_update', {
-            error: 'Game state not available'
-          });
-        }
-      });
-    });
-
-    socket.on('place-bet', async (data) => {
-      const { userId, gameId, chosenNumbers } = data;
-
-      const result = await placeBet(userId, gameId, chosenNumbers);
-
-      if (result.success) {
-        socket.emit('bet_success', result);
-      } else {
-        socket.emit('bet_failed', result);
-      }
-    });
-
     socket.on('get-balance', async (data) => {
-      const { userId } = data;
-      await getUserBalance(socket, userId);
-    });
+      const { token } = data;
+      await getUserBalance(socket, token);
+  });
+  
+
+  socket.on('get-game-state', () => {
+    const state = getGameState();
+    console.log("📡 Sending game state:", state);
+
+    if (state) {
+        socket.emit('game_update', {
+            timer: state.timer,
+            winningNumber: state.winningNumber,
+            prizePool: state.prizePool
+        });
+    } else {
+        socket.emit('game_update', {
+            error: 'Game state not available'
+        });
+    }
+});
+
+
+  socket.on('place-bet', async (data) => {
+    const userId = socket.user?.id;
+    const { gameId, chosenNumbers, betAmount } = data;
+
+    console.log(`🎲 User ${userId} is placing a bet of ${betAmount} on Game ${gameId}`);
+
+    if (!userId) {
+        console.error("❌ Error: User is not authenticated.");
+        socket.emit('bet_failed', { message: "User is not authenticated." });
+        return;
+    }
+
+    try {
+        const result = await placeBet(userId, gameId, chosenNumbers, betAmount);
+        if (result.success) {
+            socket.emit('bet_success', result);
+        } else {
+            socket.emit('bet_failed', result);
+        }
+    } catch (error) {
+        console.error(`❌ Error placing bet: ${error.message}`);
+        socket.emit('bet_failed', { message: "Failed to place bet." });
+    }
+  });
 
     socket.on('game_end', async (gameId) => {
       console.log(`🛑 Ending game with ID: ${gameId}`);

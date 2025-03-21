@@ -94,7 +94,10 @@ export default function LoginPage(root) {
 
       localStorage.setItem("authToken", response.token);
       sessionStorage.setItem("userId", response.user.id);
-  
+      localStorage.setItem("userBalance", response.user.balance);
+      console.log("💰 User balance:", response.user.balance);
+      // updateBalance(response.user.balance);
+
       console.log("💾 Token and userId saved");
       console.log("🔍 Checking token in localStorage:", localStorage.getItem("authToken"));
 

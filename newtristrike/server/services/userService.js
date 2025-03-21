@@ -17,7 +17,7 @@ const generateToken = (user) => {
     return jwt.sign(
         { id: user.id, username: user.username },
         JWT_SECRET,
-        { expiresIn: "2hrs" }
+        { expiresIn: "1d" }
     );
 };
 

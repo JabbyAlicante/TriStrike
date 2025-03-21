@@ -82,7 +82,7 @@ class WebSocketService {
     fetchLatestData() {
         this.send("latest_game_response", {});
         this.send("game_update", {});
-        this.send("user_balance", {});
+        this.send("get-balance", {});
     }
 }
 

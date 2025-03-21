@@ -16,12 +16,12 @@ export async function getUserBalance(socket, token) {
     console.log(`💰 Fetching balance for User ID: ${userId}`);
 
     try {
-        const [result] = await db.query(
+        const [[user]] = await db.query(
             `SELECT username, balance FROM users WHERE id = ?`,
             [userId]
         );
 
-        if (result.length === 0) {
+        if (!user) {
             console.warn(`⚠ User ID ${userId} not found.`);
             socket.emit("balance_failed", {
                 success: false,
@@ -32,7 +32,7 @@ export async function getUserBalance(socket, token) {
             return;
         }
 
-        const { username, balance } = result[0];
+        const { username, balance } = user;
         console.log(`✅ User ${username} (${userId}) balance: ${balance}`);
 
         socket.emit("balance_success", {

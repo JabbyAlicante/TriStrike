@@ -14,6 +14,11 @@ export default function HomePage(root) {
         return;
     }
 
+    const storedBalance = localStorage.getItem("userBalance");
+    if (storedBalance !== null) {
+        updateBalance(storedBalance);
+    }
+
     console.log("Attempting to connect WebSocket...");
     webSocketService.connect();
 
@@ -23,7 +28,8 @@ export default function HomePage(root) {
 
         webSocketService.send("game_update", {});
         webSocketService.send("latest_game_response", {});
-        webSocketService.send("user_balance", {});
+        webSocketService.send("get-balance", { token });
+        webSocketService.send("prize_pool", {});
     });
 
     
@@ -31,6 +37,19 @@ export default function HomePage(root) {
 
     //  Timer update 
     webSocketService.on("game_update", (response) => {
+
+        if (typeof response.prizePool !== "undefined") {
+            console.log(`🏆 Prize pool update received: ${response.prizePool}`);
+            
+            const prizePoolElement = document.querySelector(".prize-pool .prize");
+            if (prizePoolElement) {
+                prizePoolElement.textContent = `${response.prizePool} coins`;
+            } else {
+                console.error("❌ Prize pool element not found in the DOM");
+            }
+        } else {
+            console.error("⚠️ Prize pool update failed: Invalid response structure");
+        }
         // console.log("📦 Game update received:", response);
     
         if (typeof response.timer !== "undefined") {
@@ -73,37 +92,38 @@ export default function HomePage(root) {
                 });
             }
         
+            const chosenNumbers = [];
+
             cards.forEach(card => {
                 card.addEventListener('click', () => {
                     if (flippedCards.length < 3 && !flippedCards.includes(card)) {
                         card.classList.add('flip');
                         flippedCards.push(card);
-        
+
                         const chosenNumber = parseInt(card.getAttribute('data-card-number'), 10);
                         console.log(`🃏 Card flipped: ${chosenNumber}`);
-        
-                       
+
+                        if (!chosenNumbers.includes(chosenNumber)) {
+                            chosenNumbers.push(chosenNumber);
+                        }
+
+                        if (chosenNumbers.length === 3) {
+                            document.getElementById('place-bet-btn').disabled = false;
+                        }
+
                         if (winningDigits.includes(chosenNumber)) {
                             const headerCard = headerCards.querySelector(`[data-card-number="${chosenNumber}"]`);
                             if (headerCard) {
                                 const matchingFace = cardFaces.find(card => card.number === chosenNumber);
-                                headerCard.src = matchingFace.url; 
+                                headerCard.src = matchingFace.url;
                                 console.log(`🎯 Correct match! Showing card ${chosenNumber}`);
-        
-                                
                                 if (!matchedCards.includes(chosenNumber)) {
                                     matchedCards.push(chosenNumber);
                                 }
-        
-                                
-                                flippedCards = flippedCards.filter(card => 
-                                    parseInt(card.getAttribute('data-card-number'), 10) !== chosenNumber
-                                );
                             }
                         }
                     }
-        
-                  
+
                     if (flippedCards.length === 3) {
                         setTimeout(() => {
                             flippedCards.forEach(card => {
@@ -117,6 +137,7 @@ export default function HomePage(root) {
                     }
                 });
             });
+
         } else {
             console.error("⚠️ Fetching Winning Number failed");
         }
@@ -129,29 +150,17 @@ export default function HomePage(root) {
     });
 
     
-    webSocketService.on("user_balance", (response) => {
-        console.log("📦 User balance update received:", response);
-    
-        if (typeof response.balance !== "undefined") {
-            console.log(`💰 Balance update received: ${response.balance}`);
-    
-            const balElement = document.querySelector(".money"); 
-            if (!balElement) {
-                console.error("❌ Error: Balance element not found in the DOM");
-                return;
-            }
-    
-            console.log("✅ Updating balance text...");
-            balElement.textContent = `Balance: ${response.balance} coins`;
-    
+    function updateBalance(balance) {
+        const balElement = document.querySelector(".money");
+        if (balElement) {
+            balElement.textContent = `Balance: ${balance} coins`;
+            console.log(`✅ Balance updated: ${balance} coins`);
         } else {
-            console.error("⚠️ Balance update failed: Invalid response structure");
+            console.error("❌ Error: Balance element not found in the DOM");
         }
-    });
+    }
     
     
-
-
     const cardCount = 15;
     const cardFaces = [
         { number: 0, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/0_t5bmuh.png' },
@@ -236,7 +245,7 @@ export default function HomePage(root) {
         </section>
 
         <div class="bottom-nav">
-            <div class="money">💰Balance: --</div>
+            <p class="money">Balance: ${storedBalance} coins</p>
             <div class="prize-pool">
                 <h1 class="pp-name">Prize Pool</h1>
                 <h1 class="prize">--</h1>
@@ -255,52 +264,96 @@ export default function HomePage(root) {
     const placeBetButton = document.querySelector('.bet');
 
     placeBetButton.addEventListener('click', () => {
-        if (!betPlaced) {
-            if (flippedCards.length !== 3) {
-                console.error("❌ You must select exactly 3 cards to place a bet.");
-                alert("You must select exactly 3 cards to place a bet.");
-                return;
-            }
-
-            const chosenNumbers = flippedCards.map(card => 
-                parseInt(card.getAttribute('data-card-number'), 10)
-            );
-
-            const betAmount = 20; 
-            const gameId = sessionStorage.getItem("gameId"); 
-            console.log(gameId);
-
-            if (!gameId) {
-                console.error("❌ No active game found.");
-                alert("No active game found. Please start a new game.");
-                return;
-            }
-
-            console.log(`🎯 Placing bet with numbers: ${chosenNumbers.join(', ')}, Amount: ${betAmount}, Game Id: ${gameId}`);
-
-            webSocketService.send("place_bet", { gameId, chosenNumbers, betAmount });
-
-            betPlaced = true;
-            alert("✅ Bet placed! Good luck!");
-
-            
-            setTimeout(() => {
-                flippedCards.forEach(card => {
-                    const cardNumber = parseInt(card.getAttribute('data-card-number'), 10);
-                    if (!matchedCards.includes(cardNumber)) {
-                        card.classList.remove('flip');
-                    }
-                });
-                flippedCards = [];
-                betPlaced = false; 
-            }, 1000);
-        } else {
+        if (betPlaced) {
             console.error("❌ Bet already placed!");
             alert("You have already placed a bet for this round.");
+            return;
         }
+
+        if (flippedCards.length !== 3) {
+            console.error("❌ You must select exactly 3 cards to place a bet.");
+            alert("You must select exactly 3 cards to place a bet.");
+            return;
+        }
+
+        const chosenNumbers = flippedCards.map(card => 
+            parseInt(card.getAttribute('data-card-number'), 10)
+        );
+
+        const betAmount = 20;
+        const gameId = sessionStorage.getItem("gameId");
+
+        if (!gameId) {
+            console.error("❌ No active game found.");
+            alert("No active game found. Please start a new game.");
+            return;
+        }
+
+        console.log(`🎯 Placing bet with numbers: ${chosenNumbers.join(', ')}, Amount: ${betAmount}, Game Id: ${gameId}, user Id: ${userId}`);
+
+        webSocketService.send("place-bet", { gameId, chosenNumbers, betAmount, userId });
+
+        betPlaced = true;
+        placeBetButton.disabled = true;
+
+        webSocketService.on('bet_success', (response) => {
+            console.log(`✅ Bet successful!`, response);
+        
+            alert(`✅ Bet successful! You won ${response.prize || 0} coins.`);
+
+            const token = localStorage.getItem("authToken");
+                if (token) {
+                    webSocketService.send('get-balance', { token }); 
+                }
+
+            resetCards();
+        });
+        
+
+        webSocketService.on('bet_failed', (response) => {
+            console.error(`❌ Bet failed: ${response.message}`);
+        
+            alert(`❌ Bet failed: ${response.message}`);
+
+            betPlaced = false;
+            placeBetButton.disabled = false;
+        });
+        
     });
 
-    //  Manual refresh button
+    function resetCards() {
+        setTimeout(() => {
+            flippedCards.forEach(card => {
+                const cardNumber = parseInt(card.getAttribute('data-card-number'), 10);
+                if (!matchedCards.includes(cardNumber)) {
+                    card.classList.remove('flip');
+                }
+            });
+
+            flippedCards = [];
+            betPlaced = false;
+            placeBetButton.disabled = false;
+        }, 500); 
+    }
+
+// ✅ Card flip logic
+cards.forEach(card => {
+    card.addEventListener('click', () => {
+        if (flippedCards.length < 3 && !flippedCards.includes(card)) {
+            card.classList.add('flip');
+            flippedCards.push(card);
+
+            const chosenNumber = parseInt(card.getAttribute('data-card-number'), 10);
+            console.log(`🃏 Card flipped: ${chosenNumber}`);
+
+            if (flippedCards.length === 3) {
+                placeBetButton.disabled = false;
+            }
+        }
+    });
+});
+
+
     
 
     setTimeout(() => {

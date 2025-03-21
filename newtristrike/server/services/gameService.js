@@ -4,7 +4,7 @@ import { distributePrizePool } from "./prizeService.js";
 const isServer = process.env.PORT ? process.env.PORT === "3000" : true;
 
 let gameState = {
-    timer: 59,
+    timer: 10,
     winningNumber: null,
     gameId: null,
     prizePool: 0,
