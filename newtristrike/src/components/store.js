@@ -108,19 +108,19 @@ export default function store(root) {
     });
 
     
-    webSocketService.on("buy_coins_response", (response) => {
-        console.log("📦 Buy coins update received:", response);
+    webSocketService.on("strike_store_response", (response) => {
+        console.log("📦 Strike store response received:", response);
     
         if (response.success) {
-           
             const balanceElement = document.getElementById('balance-display');
-            balanceElement.textContent = `Balance: ${response.balance} coins`;
+            balanceElement.textContent = `Balance: ${response.data.newBalance} coins`;
             
-            alert(`Purchase successful! Your new balance is ${response.balance} coins.`);
+            alert(`✅ Purchase successful! Your new balance is ${response.data.newBalance} coins.`);
         } else {
-            alert(`Purchase failed: ${response.errorMessage}`);
+            alert(`❌ Purchase failed: ${response.message}`);
         }
     });
+    
     
 
    
@@ -134,14 +134,19 @@ export default function store(root) {
             e.preventDefault();
             const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
 
-            const userId = localStorage.getItem("userId");
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                alert("❌ User not authenticated!");
+                return;
+            }
+
             webSocketService.send("buy_coins", {
-        
+                token,
                 amount,
                 paymentMethod,
             });
-
-            alert(`${userId}: Processing purchase of ${amount} coins for P${price.toFixed(2)} using ${paymentMethod}.`);
+        
+            alert(`Processing purchase of ${amount} coins for P${price.toFixed(2)} using ${paymentMethod}.`);
             closeModal();
         };
     };

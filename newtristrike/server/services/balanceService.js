@@ -168,25 +168,12 @@ export async function addPrizeToWinner(socket, userId, prizeAmount) {
     }
 }
 
-async function getBalance(userId) {
-    const [result] = await db.query(`SELECT balance FROM users WHERE id = ?`, [userId]);
-
-    if (result.length === 0) {
-        throw { code: "USER_NOT_FOUND", message: "User not found" };
-    }
-
-    return result[0].balance;
+export async function getBalance(userId) {
+    const [result] = await db.query("SELECT balance FROM users WHERE id = ?", [userId]);
+    return result.length > 0 ? result[0].balance : null;
 }
 
-async function getUserInfo(userId) {
-    const [result] = await db.query(
-        `SELECT username FROM users WHERE id = ?`,
-        [userId]
-    );
-
-    if (result.length === 0) {
-        throw { code: "USER_NOT_FOUND", message: "User not found" };
-    }
-
-    return result[0];
+export async function getUserInfo(userId) {
+    const [result] = await db.query("SELECT id, username FROM users WHERE id = ?", [userId]);
+    return result.length > 0 ? result[0] : null;
 }

@@ -8,9 +8,11 @@ import { Server } from 'socket.io';
 import dotenv from "dotenv";
 import { signupUser, loginUser, verifyToken } from "./services/userService.js";
 import { startGameService, getGameState } from './services/gameService.js';
-import { getUserBalance } from './services/balanceService.js';
+import { getUserBalance, deductBalance, addPrizeToWinner } from "./services/balanceService.js";
 import { placeBet } from './services/betsService.js';
 import { distributePrizePool } from './services/prizeService.js';
+import { strikeStore } from "./services/store.js";
+
 
 dotenv.config();
 
@@ -94,10 +96,23 @@ async function createCustomServer() {
       }
     });
 
-    socket.on('get-balance', async (data) => {
+    socket.on("get-balance", async (data) => {
       const { token } = data;
+      console.log(`💰 Balance request received from ${socket.id}`);
       await getUserBalance(socket, token);
-  });
+    });
+
+    socket.on("deduct-balance", async (data) => {
+        const { token, amount } = data;
+        console.log(`💸 Deducting balance request from ${socket.id}`);
+        await deductBalance(socket, token, amount);
+    });
+
+    socket.on("add-prize", async (data) => {
+        const { userId, prizeAmount } = data;
+        console.log(`🏆 Adding prize to User ID: ${userId}`);
+        await addPrizeToWinner(socket, userId, prizeAmount);
+    });
   
 
   socket.on('get-game-state', () => {
@@ -115,7 +130,7 @@ async function createCustomServer() {
             error: 'Game state not available'
         });
     }
-});
+  });
 
 
   socket.on('place-bet', async (data) => {
@@ -170,6 +185,24 @@ async function createCustomServer() {
           });
       }
     });
+
+    socket.on("buy_coins", async (data) => {
+      const { token, amount } = data;
+
+      if (!token) {
+          socket.emit("strike_store_response", {
+              success: false,
+              message: "Missing token",
+              statusCode: 401,
+              data: null,
+          });
+          return;
+      }
+
+      console.log(`💰 Balance request received from ${socket.id}`);
+
+      await strikeStore(socket, token, amount);
+  });
   
 
     socket.on('disconnect', () => {
