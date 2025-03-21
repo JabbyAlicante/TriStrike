@@ -1,10 +1,15 @@
 import db from "../config/db.js";
 import { addPrizeToWinner } from "./balanceService.js";
 
-export async function getTotalPrizePool(socket, gameId) {
+export async function getTotalPrizePool(io, gameId) {
+    if (!io) {
+        console.error("❌ io is undefined in distributePrizePool");
+        return;
+    }
+
     if (!gameId) {
         console.log("⚠️ Missing game ID");
-        socket.emit("prize_pool_response", {
+        io.emit("prize_pool_response", {
             success: false,
             code: "MISSING_GAME_ID",
             message: "Game ID is required"
@@ -23,7 +28,7 @@ export async function getTotalPrizePool(socket, gameId) {
 
             console.log(`✅ Prize pool for game ${gameId}: ${prizePool}`);
 
-            socket.emit("prize_pool_response", {
+            io.emit("prize_pool_response", {
                 success: true,
                 gameId,
                 prizePool,
@@ -34,7 +39,7 @@ export async function getTotalPrizePool(socket, gameId) {
         } else {
             console.log(`⚠️ No prize pool data found for game ${gameId}`);
 
-            socket.emit("prize_pool_response", {
+            io.emit("prize_pool_response", {
                 success: false,
                 code: "NO_PRIZE_POOL_DATA",
                 message: `No prize pool data found for game ${gameId}`
@@ -45,7 +50,7 @@ export async function getTotalPrizePool(socket, gameId) {
     } catch (err) {
         console.error(`❌ Error fetching prize pool for game ${gameId}:`, err);
 
-        socket.emit("prize_pool_response", {
+        io.emit("prize_pool_response", {
             success: false,
             code: "PRIZE_POOL_FETCH_ERROR",
             message: "Error fetching prize pool",
@@ -57,9 +62,9 @@ export async function getTotalPrizePool(socket, gameId) {
 }
 
 
-export async function distributePrizePool(socket, gameId) {
+export async function distributePrizePool(io, gameId) {
     if (!gameId) {
-        socket.emit("prize_distribution", {
+        io.emit("prize_distribution", {
             success: false,
             message: "Game ID is required",
             data: null
@@ -68,7 +73,7 @@ export async function distributePrizePool(socket, gameId) {
     }
 
     console.log(`🔍 Checking for winners in Game ${gameId}`);
-    socket.emit("prize_distribution", {
+    io.emit("prize_distribution", {
         success: true,
         message: `Checking for winners in Game ${gameId}...`
     });
@@ -95,7 +100,7 @@ export async function distributePrizePool(socket, gameId) {
 
         if (totalPrizePool === 0) {
             console.log(`⚠️ No prize pool available for Game ${gameId}`);
-            socket.emit("prize_distribution", {
+            io.emit("prize_distribution", {
                 success: false,
                 message: `No prize pool available for Game ${gameId}`,
                 data: null
@@ -110,7 +115,7 @@ export async function distributePrizePool(socket, gameId) {
 
         if (winners.length === 0) {
             console.log(`🔄 No winners, carrying over prize to next round.`);
-            await storeCarryOverPrize(totalPrizePool, socket);
+            await storeCarryOverPrize(totalPrizePool, io);
             return;
         }
 
@@ -124,7 +129,7 @@ export async function distributePrizePool(socket, gameId) {
 
         try {
             const winnerPromises = winners.map(({ user_id }) =>
-                addPrizeToWinner(socket, user_id, prizePerWinner)
+                addPrizeToWinner(io, user_id, prizePerWinner)
             );
 
             await Promise.all(winnerPromises);
@@ -132,7 +137,7 @@ export async function distributePrizePool(socket, gameId) {
             await connection.commit();
 
             console.log(`✅ All winners paid for Game ${gameId}`);
-            socket.emit("prize_distribution", {
+            io.emit("prize_distribution", {
                 success: true,
                 message: `Prizes distributed successfully!`,
                 data: {
@@ -147,7 +152,7 @@ export async function distributePrizePool(socket, gameId) {
         } catch (err) {
             await connection.rollback();
             console.error("❌ Error distributing prizes:", err);
-            socket.emit("prize_distribution", {
+            io.emit("prize_distribution", {
                 success: false,
                 message: "Error distributing prizes",
                 error: err.message
@@ -157,7 +162,7 @@ export async function distributePrizePool(socket, gameId) {
         }
     } catch (err) {
         console.error("❌ Error in prize distribution:", err);
-        socket.emit("prize_distribution", {
+        io.emit("prize_distribution", {
             success: false,
             message: "Error processing prize pool",
             error: err.message
@@ -179,7 +184,7 @@ export async function updatePrizePoolInGame(gameId, prizePool) {
     }
 }
 
-export async function storeCarryOverPrize(amount, socket) {
+export async function storeCarryOverPrize(amount, io) {
     try {
         const [result] = await db.query(
             `SELECT id FROM games ORDER BY created_at DESC LIMIT 1`
@@ -200,7 +205,7 @@ export async function storeCarryOverPrize(amount, socket) {
             `🔄 Carry-over prize added! New Prize Pool for Game ${latestGameId}: +${amount}`
         );
 
-        socket.emit("prize_distribution", {
+        io.emit("prize_distribution", {
             success: true,
             message: `Carry-over prize added to Game ${latestGameId}`,
             data: {
@@ -210,7 +215,7 @@ export async function storeCarryOverPrize(amount, socket) {
         });
     } catch (err) {
         console.error("❌ Error updating carry-over prize pool:", err);
-        socket.emit("prize_distribution", {
+        io.emit("prize_distribution", {
             success: false,
             message: "Error carrying over prize",
             error: err.message

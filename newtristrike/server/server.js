@@ -10,6 +10,7 @@ import { signupUser, loginUser, verifyToken } from "./services/userService.js";
 import { startGameService, getGameState } from './services/gameService.js';
 import { getUserBalance } from './services/balanceService.js';
 import { placeBet } from './services/betsService.js';
+import { distributePrizePool } from './services/prizeService.js';
 
 dotenv.config();
 
@@ -125,6 +126,35 @@ async function createCustomServer() {
       const { userId } = data;
       await getUserBalance(socket, userId);
     });
+
+    socket.on('game_end', async (gameId) => {
+      console.log(`🛑 Ending game with ID: ${gameId}`);
+  
+      if (!gameId) {
+          socket.emit('game_end_failed', {
+              success: false,
+              message: 'Game ID is required'
+          });
+          return;
+      }
+  
+      try {
+          await distributePrizePool(gameId);
+  
+          io.emit('game_ended', {
+              success: true,
+              message: `Game ${gameId} has ended and prizes have been distributed!`
+          });
+      } catch (err) {
+          console.error(`❌ Error ending game ${gameId}:`, err);
+          socket.emit('game_end_failed', {
+              success: false,
+              message: 'Failed to end game',
+              error: err.message
+          });
+      }
+    });
+  
 
     socket.on('disconnect', () => {
       console.log(`❌ User disconnected: ${socket.id}`);

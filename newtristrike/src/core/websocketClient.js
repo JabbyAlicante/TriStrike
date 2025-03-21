@@ -28,7 +28,6 @@ class WebSocketService {
                     this.send("authenticate", token);
                 }
 
-                // Request initial data when connected
                 this.send("latest_game_response", {});
                 this.send("game_update", {});
                 this.send("user_balance", {});
@@ -80,7 +79,6 @@ class WebSocketService {
         }
     }
 
-    // Fetch latest timer, winning number, and balance
     fetchLatestData() {
         this.send("latest_game_response", {});
         this.send("game_update", {});
