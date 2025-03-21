@@ -39,18 +39,23 @@ JWT_SECRET=your-jwt-secret
 ```npm run dev```
 ## Code Overview
 ### Backend (Express.js)
-  - `server.js` – Sets up the Express server and listening from events in clients
-  - `services`  – Manages the logic and websocket connections
-  - `db.js`  – Handles MySQL connection and queries
+| File/Folder | Purpose |
+|------------|---------|
+| `server.js` | Sets up the Express server and listens for events from clients |
+| `services` | Manages the logic and WebSocket connections |
+| `db.js` | Handles MySQL connection and queries |
 ### Frontend (Vanilla JS)
-  - `components` – Contains logic and event emits (e.g., handling button clicks, sending data to the server via WebSocket).
-  - `Core`  – Houses core functionality like `spa.js` (Single Page Application handling) and `websocketclients.js` (WebSocket connection logic).
-  - `icons`  – Contains SVG files for logos and icons used in the UI.
-  - `layouts` – 	Stores reusable layout components like headers, footers, and navigation bars.
-  - `pages`  – Contains individual page components (e.g., home page, login page).
-  - `style`  – Stores CSS or styling files to define the application's look and feel.
-  - `index.html`  – 	The main HTML file that acts as the entry point for the app.
-  - `main.js`  – The main JavaScript file that initializes the app and sets up core functionality.
+| File/Folder | Purpose |
+|------------|---------|
+| `components` | Contains logic and event emits (e.g., handling button clicks, sending data to the server via WebSocket). |
+| `Core` | Houses core functionality like `spa.js` (Single Page Application handling) and `websocketclients.js` (WebSocket connection logic). |
+| `icons` | Contains SVG files for logos and icons used in the UI. |
+| `layouts` | Stores reusable layout components like headers, footers, and navigation bars. |
+| `pages` | Contains individual page components (e.g., home page, login page). |
+| `style` | Stores CSS or styling files to define the application's look and feel. |
+| `index.html` | The main HTML file that acts as the entry point for the app. |
+| `main.js` | The main JavaScript file that initializes the app and sets up core functionality. |
+
 # Contributors
 Alicante, Jabby L.
 Pineda, Geri Greizelle
