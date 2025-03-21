@@ -67,10 +67,10 @@ export default function SignUpPage(root) {
             return;
         }
 
-        webSocketService.send("signup", { username, email, password });
+        webSocketService.send("sign-up", { username, email, password });
     });
 
-    webSocketService.on("signup_response", (response) => {
+    webSocketService.on("signup-response", (response) => {
         if (response.success) {
             showAlert("Signup successful! Redirecting...");
             setTimeout(() => LoginPage(root), 2000);
@@ -89,7 +89,7 @@ export default function SignUpPage(root) {
         }, 3000);
     }
 
-    webSocketService.on("signup_response", (response) => {
+    webSocketService.on("signup-response", (response) => {
         if (response.success) {
             showAlert("Sign up successful!");
             setTimeout(() => LoginPage(root, 2000));

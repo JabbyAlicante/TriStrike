@@ -7,9 +7,9 @@ import { createServer as createViteServer } from 'vite';
 import { Server } from 'socket.io';
 import dotenv from "dotenv";
 import { signupUser, loginUser, verifyToken } from "./services/userService.js";
-import { initializeGameState, startGameService, getGameState } from './services/gameService.js';
+import { startGameService, getGameState } from './services/gameService.js';
 import { getUserBalance } from './services/balanceService.js';
-
+import { placeBet } from './services/betsService.js';
 
 dotenv.config();
 
@@ -19,7 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 async function createCustomServer() {
   const app = express();
   const server = createServer(app);
-  const io = new Server(server);
+  const io = new Server(server, { cors: { origin: "*" } });
 
   let vite;
 
@@ -40,7 +40,6 @@ async function createCustomServer() {
         __dirname,
         IS_PRODUCTION ? '../dist/index.html' : '../src/index.html'
       );
-
       res.sendFile(indexPath);
     } catch (e) {
       next(e);
@@ -49,40 +48,42 @@ async function createCustomServer() {
 
   const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-}).on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-        console.error(`Port ${PORT} is already in use.`);
-        process.exit(1);
-    } else {
-        console.error('Server error:', err);
+  server.listen(PORT, async () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+
+    try {
+      // await initializeGameState(io);
+
+      startGameService(io);
+
+      console.log("✅ Game service started successfully.");
+    } catch (err) {
+      console.error("❌ Error starting game service:", err);
     }
-});
-
-
-  // Initialize game state and start game loop
-  await initializeGameState(); 
-  startGameService(io);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use.`);
+      process.exit(1);
+    } else {
+      console.error('❌ Server error:', err);
+    }
+  });
 
   io.on('connection', (socket) => {
-    console.log('User connected');
+    console.log(`✅ User connected: ${socket.id}`);
 
     socket.emit('welcome', 'A message from the server');
 
-    // Sign-up event
     socket.on('sign-up', async (data) => {
       const { username, email, password } = data;
       await signupUser(socket, username, email, password);
     });
 
-    // Log-in event
     socket.on('log-in', async (data) => {
       const { username, password } = data;
       await loginUser(socket, username, password);
     });
 
-    // Token verification
     socket.on('verify-token', async (token) => {
       try {
         const result = await verifyToken(token);
@@ -92,14 +93,21 @@ server.listen(PORT, () => {
       }
     });
 
-    // Get game state event
     socket.on('get-game-state', () => {
       getGameState((state) => {
-        socket.emit('game-state', state);
+        console.log("📡 Sending game state:", state);
+        if (state) {
+          socket.emit('game_update', {
+            timer: state.timer,
+            winningNumber: state.winningNumber
+          });
+        } else {
+          socket.emit('game_update', {
+            error: 'Game state not available'
+          });
+        }
       });
     });
-
-    //bet
 
     socket.on('place-bet', async (data) => {
       const { userId, gameId, chosenNumbers } = data;
@@ -107,9 +115,9 @@ server.listen(PORT, () => {
       const result = await placeBet(userId, gameId, chosenNumbers);
 
       if (result.success) {
-          socket.emit('bet_success', result);
+        socket.emit('bet_success', result);
       } else {
-          socket.emit('bet_failed', result);
+        socket.emit('bet_failed', result);
       }
     });
 
@@ -118,15 +126,9 @@ server.listen(PORT, () => {
       await getUserBalance(socket, userId);
     });
 
-
     socket.on('disconnect', () => {
-      console.log('User disconnected');
-      });
+      console.log(`❌ User disconnected: ${socket.id}`);
     });
-
-
-  server.listen(process.env.PORT, () => {
-    console.log(`🚀 Server running on port ${process.env.PORT}`);
   });
 }
 

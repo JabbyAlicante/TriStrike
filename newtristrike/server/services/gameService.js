@@ -1,9 +1,11 @@
 import db from "../config/db.js";
-import { distributePrizePool, getTotalPrizePool } from "./prizeService.js";  
+import { distributePrizePool, getTotalPrizePool } from "./prizeService.js";
+
+const isServer = process.env.PORT ? process.env.PORT === "3000" : true;
 
 let gameState = {
     timer: 59,
-    winningNumber: generateWinningNumber(),
+    winningNumber: null,
     gameId: null,
     isProcessing: false,
 };
@@ -17,7 +19,6 @@ const query = (sql, params) => {
     });
 };
 
-// 🔹 Initialize game state from the database
 export async function initializeGameState(io) {
     try {
         const results = await query(
@@ -26,10 +27,10 @@ export async function initializeGameState(io) {
         );
 
         if (results.length === 0) {
-            console.warn("No active game found. Creating a new one...");
-            await createNewGame(io);
+            console.warn("⚠️ No active game found. Creating a new one...");
+            if (isServer) await createNewGame(io);
         } else {
-            let elapsed = results[0].elapsed || 0;
+            let elapsed = results[0].elapsed != null ? results[0].elapsed : 0;
             gameState = {
                 gameId: results[0].id,
                 timer: Math.max(0, 59 - elapsed),
@@ -37,9 +38,8 @@ export async function initializeGameState(io) {
                 isProcessing: false,
             };
 
-            console.log(`Loaded active game: ID=${gameState.gameId}, Timer=${gameState.timer}`);
+            console.log(`🔄 Loaded active game ID=${gameState.gameId}, Timer=${gameState.timer}, Number=${gameState.winningNumber}`);
 
-            // 🔥 Emit initial game state + response
             io.emit("game_state", {
                 status: "success",
                 message: `Game ${gameState.gameId} loaded successfully.`,
@@ -47,7 +47,7 @@ export async function initializeGameState(io) {
             });
         }
     } catch (err) {
-        console.error("❌ Database error while fetching game state:", err);
+        console.error("❌ Error loading game state:", err);
         io.emit("game_error", {
             status: "error",
             message: "Failed to load game state.",
@@ -56,123 +56,117 @@ export async function initializeGameState(io) {
     }
 }
 
-// Start the game loop and broadcast updates
+// Main game loop
 export function startGameService(io) {
     setInterval(async () => {
-        if (gameState.timer > 0) {
-            gameState.timer--;
-        } else if (!gameState.isProcessing) {
-            console.log("⏳ Timer reached 0. Creating new game...");
-            gameState.isProcessing = true; 
-            await createNewGame(io);
-        }
+        if (!isServer) return;
 
-        console.log(`🕒 Timer: ${gameState.timer} | 🎰 Winning Number: ${gameState.winningNumber}`);
+        try {
+            if (gameState.timer > 0) {
+                gameState.timer--;
+            } else if (!gameState.isProcessing) {
+                console.log("⏳ Timer reached 0. Creating new game...");
+                await createNewGame(io);
+            }
+            console.log(`🕒 Timer: ${gameState.timer} | 🎰 Winning Number: ${gameState.winningNumber}`);
 
-        if (gameState.gameId) {
+            // ✅ Broadcast consistent state across servers
             io.emit("game_update", {
                 timer: gameState.timer,
                 winningNumber: gameState.winningNumber
             });
+        } catch (err) {
+            console.error("❌ Error in game loop:", err);
         }
     }, 1000);
 }
 
-//  Create a new game round
+// ✅ Create a new game round
 async function createNewGame(io) {
-    try {
-        if (gameState.gameId) {
-            console.log(`🏁 Ending Game ${gameState.gameId} before starting a new one...`);
-            try {
-                const message = await distributePrizePool(gameState.gameId);
-                console.log(`🎉 ${message}`);
+    if (!isServer) return;
 
-                io.emit("prize_distribution", {
-                    status: "success",
-                    message: `Prizes distributed for game ${gameState.gameId}.`,
-                    details: message
-                });
-            } catch (err) {
-                console.error("❌ Error distributing prizes:", err);
-                io.emit("prize_distribution", {
-                    status: "error",
-                    message: `Failed to distribute prizes for game ${gameState.gameId}.`,
-                    error: err.message
-                });
-            }
+    if (gameState.isProcessing) return;
+    gameState.isProcessing = true;
+
+    try {
+        // ✅ End previous game if exists
+        if (gameState.gameId) {
+            console.log(`🏁 Ending Game ${gameState.gameId}...`);
+            await distributePrizePool(gameState.gameId);
         }
 
-        // Reset game state
         gameState.timer = 59;
         gameState.winningNumber = generateWinningNumber();
 
-        // Finish the previous game
         await query(`UPDATE games SET status = 'finished' WHERE status = 'ongoing'`);
 
-        // Insert a new game
         const result = await query(
-            `INSERT INTO games (winning_num, prize_pool, status) VALUES (?, 20, 'ongoing')`,
+            `INSERT INTO games (winning_num, prize_pool, status, created_at) VALUES (?, 20, 'ongoing', NOW())`,
             [gameState.winningNumber]
         );
 
         gameState.gameId = result.insertId;
-        gameState.isProcessing = false;
-        console.log(`✅ New game started (ID: ${gameState.gameId})`);
 
-        // 🔥 Emit new game state
+        console.log(`✅ New game created (ID: ${gameState.gameId}) with winning number: ${gameState.winningNumber}`);
+
         io.emit("new_game", {
             status: "success",
             message: `New game created successfully (ID: ${gameState.gameId}).`,
             data: gameState
         });
 
-        try {
-            const previousPrizePool = await getTotalPrizePool(gameState.gameId - 1);
+        await carryOverPrizePool(io);
+    } catch (err) {
+        console.error("❌ Error creating new game:", err);
+        io.emit("new_game", {
+            status: "error",
+            message: "Failed to create new game.",
+            error: err.message
+        });
+    } finally {
+        gameState.isProcessing = false;
+    }
+}
+
+async function carryOverPrizePool(io) {
+    try {
+        const previousGame = await query(
+            `SELECT id, prize_pool FROM games WHERE status = 'finished' ORDER BY id DESC LIMIT 1`
+        );
+
+        if (previousGame.length > 0) {
+            const previousPrizePool = previousGame[0].prize_pool;
 
             if (previousPrizePool > 0) {
-                console.log(`🔄 Carrying over prize pool of ${previousPrizePool} from game ${gameState.gameId - 1} to game ${gameState.gameId}`);
-
-                // Carry over prize pool
                 await query(
                     `UPDATE games SET prize_pool = prize_pool + ? WHERE id = ?`,
                     [previousPrizePool, gameState.gameId]
                 );
 
-                console.log(`✅ Prize pool carried over: ${previousPrizePool}`);
-
-                // Confirm updated prize pool
                 const newPrizePool = await getTotalPrizePool(gameState.gameId);
-                console.log(`🏆 Updated prize pool for game ${gameState.gameId}: ${newPrizePool}`);
+                console.log(`🏆 Carried over ${previousPrizePool} coins to game ${gameState.gameId}`);
 
-                // 🔥 Emit prize pool update
                 io.emit("prize_pool_update", {
                     status: "success",
                     message: `Prize pool updated to ${newPrizePool} coins.`,
                     newPrizePool
                 });
             } else {
-                console.log(`🚫 No prize to carry over from game ${gameState.gameId - 1}`);
+                console.log(`🚫 No prize pool to carry over from game ${previousGame[0].id}`);
             }
-        } catch (err) {
-            console.error("❌ Error handling prize pool:", err);
-            io.emit("prize_pool_update", {
-                status: "error",
-                message: "Failed to update prize pool.",
-                error: err.message
-            });
         }
     } catch (err) {
-        console.error("❌ Database error while inserting game:", err);
-        io.emit("new_game", {
+        console.error("❌ Error carrying over prize pool:", err);
+        io.emit("prize_pool_update", {
             status: "error",
-            message: "Failed to create new game.",
+            message: "Failed to update prize pool.",
             error: err.message
         });
     }
 }
 
-export function getGameState(callback) {
-    callback(gameState);
+export function getGameState() {
+    return(gameState);
 }
 
 function generateWinningNumber() {

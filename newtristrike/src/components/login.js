@@ -5,8 +5,9 @@ import HomePage from './home';
 import webSocketService from '../core/websocketClient';
 
 export default function LoginPage(root) {
+  console.log("🔌 Connecting to WebSocket...");
   webSocketService.connect();
-  
+
   root.innerHTML = `
     <div class="login-container" id="login-id">
       <div class="mini-logo">
@@ -39,13 +40,28 @@ export default function LoginPage(root) {
     </div>
   `;
 
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    console.log("✅ Token exists in localStorage:", token);
+
+    console.log("🔒 Authenticating with existing token...");
+    webSocketService.send("authenticate", token);
+
+    setTimeout(() => {
+      console.log("➡️ Redirecting to Home Page...");
+      HomePage(root);
+    }, 1000);
+  }
+
   root.querySelector(".mini-logo").addEventListener("click", () => {
+    console.log("🏠 Redirecting to Landing Page...");
     LandingPage(root);
   });
 
   const logSignUp = root.querySelector(".login-text");
   if (logSignUp) {
     logSignUp.addEventListener("click", () => {
+      console.log("✍️ Redirecting to Sign Up Page...");
       LogSignUpPage(root);
     });
   }
@@ -53,39 +69,51 @@ export default function LoginPage(root) {
   const loginForm = root.querySelector("#login-form");
   loginForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    
+
     const username = root.querySelector("#username").value.trim();
     const password = root.querySelector("#password").value.trim();
-    
+
     if (!username || !password) {
+      console.warn("⚠️ Missing fields");
       showAlert("Please fill in all required fields!");
       return;
     }
 
-    webSocketService.send("login", { username, password });
+    console.log("📤 Sending login request:", { username, password });
+
+    webSocketService.send("log-in", { username, password });
   });
 
-  webSocketService.on("login_response", (response) => {
+    webSocketService.on("login-response", (response) => {
+    console.log("📥 Received login response:", response);
+  
     if (response.success) {
+      console.log("✅ Login successful:", response);
+  
       showAlert("✅ Login successful! Redirecting...");
-      console.log("Login respone:", response);
 
       localStorage.setItem("authToken", response.token);
-      
-      const userId = response.user.id;
-      console.log("User", userId);
+      sessionStorage.setItem("userId", response.user.id);
+  
+      console.log("💾 Token and userId saved");
+      console.log("🔍 Checking token in localStorage:", localStorage.getItem("authToken"));
 
-      sessionStorage.setItem("userId", userId);
-
+      console.log("🔒 Authenticating...");
       webSocketService.send("authenticate", response.token);
-
-      setTimeout(() => HomePage(root), 2000);
+  
+      setTimeout(() => {
+        console.log("➡️ Redirecting to Home Page...");
+        HomePage(root);
+      }, 2000);
     } else {
+      console.error("❌ Login failed:", response.message);
       showAlert(response.message);
     }
   });
+  
 
   function showAlert(message) {
+    console.log("🚨 Alert:", message);
     const alertBox = root.querySelector("#alertMessage");
     const alertText = root.querySelector("#alertText");
     alertText.textContent = message;
