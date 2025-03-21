@@ -14,6 +14,7 @@ const connectDB = async () => {
             database: process.env.DB_NAME
         });
 
+        
         console.log("Connected to db!");
     } catch (err) {
         console.error("error db: ", err);
