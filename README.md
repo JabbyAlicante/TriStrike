@@ -1,12 +1,12 @@
-# TriStrike
+# ✨ TriStrike
 Tristrike is a real-time bingo-inspired gambling game built with Express, Vanilla JavaScript, and WebSockets. It follows a Single Page Application (SPA) structure, where components dynamically update without requiring a full page reload. Players place bets on a combination of three numbers and try to match the winning result. The game features a countdown timer, real-time balance updates, and a virtual betting system.
-## Features
+## 🚀 Features
 - Real-Time Gameplay using Websockets
 - 59-second countdown per game round
 - Virtual betting system with a starting balance
 - Automatic balance update after each round
 - Authentication using token-based WebSocket connection
-## Tech Stack
+## 🛠️ Tech Stack
 | Technology | Purpose |
 |-----------|---------|
 | Express.js | Backend framework |
@@ -15,7 +15,7 @@ Tristrike is a real-time bingo-inspired gambling game built with Express, Vanill
 | MySQL      | Database |
 | Vite       | Development tool for faster builds |
 | Node.js    | Runtime environment |
-## Installation
+## 📥 Installation
 1. Clone the repository
 `git clone https://github.com/JabbyAlicante/tristrike.git`
 2. Navigate the project directory
@@ -35,9 +35,9 @@ JWT_SECRET=your-jwt-secret
    - Use XAMPP to start MySQL (or you can you use ubuntu)
    - Create a database named `tristrike`
    - Import the provided `.sql` file in `backend/database`
-## Running the Project
+## 🚀 Running the Project
 ```npm run dev```
-## Code Overview
+## 👨‍💻 Code Overview
 ### Backend (Express.js)
 | File/Folder | Purpose |
 |------------|---------|
@@ -56,6 +56,6 @@ JWT_SECRET=your-jwt-secret
 | `index.html` | The main HTML file that acts as the entry point for the app. |
 | `main.js` | The main JavaScript file that initializes the app and sets up core functionality. |
 
-# Contributors
+# ⭐ Contributors
 - Alicante, Jabby L.
 - Pineda, Geri Greizelle
