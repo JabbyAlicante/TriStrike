@@ -318,7 +318,7 @@ export default function HomePage(root) {
             const balanceElement = document.getElementById('money');
             balanceElement.textContent = `Balance: ${updatedUserBal} coins`;
 
-            alert(`✅ Bet successful! You won ${response.prize || 0} coins.`);
+            alert(`✅ Bet successful! :D `);
 
             if (token) {
                 webSocketService.send('get-balance', { token });
