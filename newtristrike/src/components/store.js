@@ -1,6 +1,22 @@
 import '../styles/store.css';
 import webSocketService from '../core/websocketClient';
 
+function updateBalance(balance) {
+    const balElement = document.querySelector(".money");
+    if (balElement) {
+        balElement.textContent = `Balance: ${balance} coins`;
+        console.log(`✅ Balance updated: ${balance} coins`);
+    } else {
+        console.error("❌ Error: Balance element not found in the DOM");
+    }
+}
+
+
+const storedBalance = sessionStorage.getItem("updatedUserBalance");
+    if (storedBalance !== null) {
+        updateBalance(storedBalance);
+}
+
 export default function store(root) {
     root.innerHTML = `
         <div class="body">
@@ -32,7 +48,7 @@ export default function store(root) {
 
             <!-- Coin Store Section -->
             <div class="store-container">
-                <div class="user-balance" id="balance-display">Balance: Loading...</div>
+                <div class="user-balance" id="balance-display">Balance: ${storedBalance}</div>
                 <h1>Buy Coins</h1>
                 <div class="coin-packages">
                     <div class="package">
@@ -87,23 +103,23 @@ export default function store(root) {
     webSocketService.fetchLatestData();
 
 
-    webSocketService.on("user_balance", (response) => {
-        console.log("📦 User balance update received:", response);
+    // webSocketService.on("user_balance", (response) => {
+    //     console.log("📦 User balance update received:", response);
 
-        if (typeof response.balance !== "undefined") {
-            console.log(`💰 Balance update received: ${response.balance}`);
+    //     if (typeof response.balance !== "undefined") {
+    //         console.log(`💰 Balance update received: ${response.balance}`);
 
-            const balanceDisplay = document.getElementById("balance-display");
-            if (balanceDisplay) {
-                console.log("✅ Updating balance text...");
-                balanceDisplay.textContent = `Balance: ${response.balance} coins`;
-            } else {
-                console.error("❌ Error: Balance element not found in the DOM");
-            }
-        } else {
-            console.error("⚠️ Balance update failed: Invalid response structure");
-        }
-    });
+    //         const balanceDisplay = document.getElementById("balance-display");
+    //         if (balanceDisplay) {
+    //             console.log("✅ Updating balance text...");
+    //             balanceDisplay.textContent = `Balance: ${response.balance} coins`;
+    //         } else {
+    //             console.error("❌ Error: Balance element not found in the DOM");
+    //         }
+    //     } else {
+    //         console.error("⚠️ Balance update failed: Invalid response structure");
+    //     }
+    // });
 
     
     webSocketService.on("strike_store_response", (response) => {
