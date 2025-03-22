@@ -479,8 +479,8 @@
   }
 
   .welcome-title img {
-    width: 70%;
-    margin-right: 22rem;
+    width: 85%;
+    margin-right: 5rem;
     clip-path: inset(0 0 0 6%);
     margin-top: -30rem;
   }
@@ -496,15 +496,15 @@
   }
 
   .tagline {
-    margin-top: 11rem;
+    margin-top: 8rem;
     font-size: 55px;
-    margin-left: 23rem;
+    margin-left: 15rem;
   }
 
 
   .play-button {
-    bottom: 10rem;
-    margin-right: 35rem;
+    bottom: 5rem;
+    /* margin-right: 35rem; */
   }
 
   .play-start {

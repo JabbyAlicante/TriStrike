@@ -14,7 +14,7 @@
     .card-grid {
         grid-template-columns: repeat(5, 1fr);
         padding: 1rem;
-        padding-bottom: 2rem;
+        padding-bottom: 7rem;
     }
 
     .game-board {
@@ -27,7 +27,7 @@
     .timer {
         font-size: 28px;
         height: 50px;
-        width: 250px;
+        /* width: 250px; */
         
     }
 
@@ -36,7 +36,8 @@
     }
 
     .bottom-nav {
-        height: 6rem;
+        margin-top: 15px;
+        height: 7rem;
     }
 
     .prize-pool {
@@ -56,6 +57,14 @@
 }
 
 @media (min-width: 1440px) {
+
+    /* .timer {
+        font-size: 28px;
+        height: 50px;
+        width: 250px;
+        margin-right: 45px;
+        
+    } */
 
     .cards img {
         width: 15%;
