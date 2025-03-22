@@ -54,11 +54,24 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     width: 100%;
     max-width: 1000px;
-    margin: 60px auto;
+    
     text-align: center;
     color: #fff;
     font-family: 'Playfair Display', serif;
 }
+
+.user-balance {
+    padding: 1rem;
+    background-color: #0A0614;
+    /* background-color: #CEA63A; */
+    font-family: 'Marcellus SC', serif;
+    color: #CEA63A;
+    /* color: ##0A0614; */
+    font-size: 35px;
+    filter: drop-shadow(0 0 5px #281858);
+}
+
+
 
 h1 {
     font-size: 28px;

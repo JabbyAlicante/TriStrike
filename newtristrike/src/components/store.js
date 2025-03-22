@@ -9,7 +9,7 @@ export default function store(root) {
                     <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108692/TriStrikeLogo_eycqvd.png" alt="TriStrike Logo">
                 </div>
                 <div class="info">
-                    <div class="user-balance" id="balance-display">Balance: Loading...</div>
+            
 
                     <div class="user-img" id="userProfile">
                         <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="User Profile" />
@@ -32,7 +32,7 @@ export default function store(root) {
 
             <!-- Coin Store Section -->
             <div class="store-container">
-
+                <div class="user-balance" id="balance-display">Balance: Loading...</div>
                 <h1>Buy Coins</h1>
                 <div class="coin-packages">
                     <div class="package">
