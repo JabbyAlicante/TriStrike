@@ -14,10 +14,14 @@ export default function HomePage(root) {
         return;
     }
 
-    const storedBalance = localStorage.getItem("userBalance");
+    const storedBalance = sessionStorage.getItem("updatedUserBalance");
     if (storedBalance !== null) {
         updateBalance(storedBalance);
     }
+    
+        // const updatedUserBalance = response.balance;
+        // sessionStorage.setItem("updatedUserBalance", updatedUserBalance)
+        // console.log("Updated user balance: ", updatedUserBalance);
 
     console.log("Attempting to connect WebSocket...");
     webSocketService.connect();
@@ -306,6 +310,10 @@ export default function HomePage(root) {
 
         webSocketService.on('bet_success', (response) => {
             console.log(`✅ Bet successful!`, response);
+
+            // const updatedUserBalance = response.balance;
+            sessionStorage.setItem("updatedUserBalance", response.balance)
+            console.log("Updated user balance: ", response.balance);
 
             alert(`✅ Bet successful! You won ${response.prize || 0} coins.`);
 
