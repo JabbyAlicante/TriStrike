@@ -142,7 +142,7 @@ export default function HomePage(root) {
             console.error("⚠️ Fetching Winning Number failed");
         }
         if (response.gameId) {
-            // console.log(`🎯 Game started! Game ID: ${response.gameId}`);
+
             sessionStorage.setItem('gameId', response.gameId);
         } else {
             console.error("❌ No gameId received!");
@@ -289,36 +289,41 @@ export default function HomePage(root) {
             return;
         }
 
-        console.log(`🎯 Placing bet with numbers: ${chosenNumbers.join(', ')}, Amount: ${betAmount}, Game Id: ${gameId}, user Id: ${userId}`);
+        const token = localStorage.getItem("authToken"); 
 
-        webSocketService.send("place-bet", { gameId, chosenNumbers, betAmount, userId });
+        if (!token) {
+            console.error("❌ User not authenticated.");
+            alert("Please log in to place a bet.");
+            return;
+        }
+
+        console.log(`🎯 Placing bet with numbers: ${chosenNumbers.join(', ')}, Amount: ${betAmount}, Game Id: ${gameId}`);
+
+        webSocketService.send("place-bet", { gameId, chosenNumbers, betAmount, token });
 
         betPlaced = true;
         placeBetButton.disabled = true;
 
         webSocketService.on('bet_success', (response) => {
             console.log(`✅ Bet successful!`, response);
-        
+
             alert(`✅ Bet successful! You won ${response.prize || 0} coins.`);
 
-            const token = localStorage.getItem("authToken");
-                if (token) {
-                    webSocketService.send('get-balance', { token }); 
-                }
+            if (token) {
+                webSocketService.send('get-balance', { token });
+            }
 
             resetCards();
         });
-        
 
         webSocketService.on('bet_failed', (response) => {
             console.error(`❌ Bet failed: ${response.message}`);
-        
+
             alert(`❌ Bet failed: ${response.message}`);
 
             betPlaced = false;
             placeBetButton.disabled = false;
         });
-        
     });
 
     function resetCards() {
@@ -336,7 +341,6 @@ export default function HomePage(root) {
         }, 500); 
     }
 
-// ✅ Card flip logic
 cards.forEach(card => {
     card.addEventListener('click', () => {
         if (flippedCards.length < 3 && !flippedCards.includes(card)) {

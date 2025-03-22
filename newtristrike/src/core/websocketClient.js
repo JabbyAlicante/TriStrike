@@ -7,40 +7,50 @@ class WebSocketService {
         this.socket = null;
         this.listeners = {};
         this.isConnected = false;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
     }
 
     connect() {
         if (!this.socket) {
-            const token = localStorage.getItem("authToken");
-            // const userId = socket.user?.id;
+            console.log(`🌐 Attempting to connect...`);
 
-            console.log(`Attempting to connect with token: ${token}`);
             this.socket = io(WS_URL, {
-                transports: ["websocket"],
-                auth: { token },
+                transports: ["websocket"], 
             });
 
             this.socket.on("connect", () => {
                 console.log("✅ WebSocket connected");
                 this.isConnected = true;
+                this.reconnectAttempts = 0;
 
+                this.fetchLatestData();
+
+                const token = localStorage.getItem("authToken");
                 if (token) {
-                    this.send("authenticate", token);
+                    console.log("🔑 Sending log-in event after connection...");
+                    this.send("log-in", { token });
                 }
-
-                this.send("latest_game_response", {});
-                this.send("game_update", {});
-                this.send("user_balance", {});
             });
 
             this.socket.on("disconnect", () => {
-                console.log("❌ WebSocket disconnected");
+                console.warn("❌ WebSocket disconnected");
                 this.isConnected = false;
                 this.socket = null;
+
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    const delay = Math.pow(2, this.reconnectAttempts) * 1000;
+                    console.log(`🔄 Reconnecting in ${delay / 1000} seconds...`);
+                    setTimeout(() => this.connect(), delay);
+                } else {
+                    console.error("❌ Max reconnect attempts reached. Giving up.");
+                }
             });
 
             this.socket.on("connect_error", (error) => {
                 console.error("⚠️ WebSocket connection error:", error);
+                this.isConnected = false;
             });
 
             this.socket.on("error", (error) => {
@@ -48,7 +58,6 @@ class WebSocketService {
             });
 
             this.socket.onAny((event, payload) => {
-                // console.log(`📦 Event received: ${event} with payload:`, payload);
                 if (this.listeners[event]) {
                     this.listeners[event](payload);
                 }
@@ -61,7 +70,7 @@ class WebSocketService {
             console.log(`📤 Sending event: ${event} with payload:`, payload);
             this.socket.emit(event, payload);
         } else {
-            console.error("❌ WebSocket is not connected. Retrying in 1 second...");
+            console.warn(`❌ WebSocket is not connected. Retrying event "${event}" in 1 second...`);
             setTimeout(() => this.send(event, payload), 1000);
         }
     }
@@ -80,9 +89,12 @@ class WebSocketService {
     }
 
     fetchLatestData() {
-        this.send("latest_game_response", {});
-        this.send("game_update", {});
-        this.send("get-balance", {});
+        if (this.isConnected) {
+            console.log("🔄 Fetching latest game data...");
+            this.send("latest_game_response", {});
+            this.send("game_update", {});
+            this.send("get-balance", {});
+        }
     }
 }
 

@@ -3,27 +3,27 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-let db;
+const db = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10, 
+    queueLimit: 0
+});
 
-const connectDB = async () => {
+// console.log("✅ Database pool created!");
+
+(async () => {
     try {
-        db =await mysql.createConnection({
-            host: process.env.DB_HOST,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASS,
-            database: process.env.DB_NAME
-        });
-
-        
-        console.log("Connected to db!");
+        const connection = await db.getConnection();
+        console.log("✅ Database connection successful!");
+        connection.release();
     } catch (err) {
-        console.error("error db: ", err);
-        throw err;
+        console.error("❌ Database connection failed:", err);
     }
-};
-
-await connectDB();
+})();
 
 export const SECRET_KEY = process.env.SECRET_KEY;
 export default db;
-

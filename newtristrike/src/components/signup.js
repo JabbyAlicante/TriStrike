@@ -44,16 +44,18 @@ export default function SignUpPage(root) {
     `;
 
     root.querySelector(".mini-logo").addEventListener("click", () => {
+        console.log("🏠 Redirecting to Landing Page...");
         LandingPage(root);
     });
-
+    
     const logSignUp = root.querySelector(".login-text");
     if (logSignUp) {
         logSignUp.addEventListener("click", () => {
+            console.log("✍️ Redirecting to Sign Up Page...");
             LogSignUpPage(root);
         });
     }
-
+    
     const signupForm = root.querySelector("#signup-form");
     signupForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -63,23 +65,34 @@ export default function SignUpPage(root) {
         const password = root.querySelector("#password").value.trim();
         
         if (!username || !email || !password) {
+            console.warn("⚠️ Missing fields");
             showAlert("Please fill in all required fields!");
             return;
         }
-
+    
+        console.log("📤 Sending signup request:", { username, email, password });
+    
         webSocketService.send("sign-up", { username, email, password });
     });
-
+    
     webSocketService.on("signup-response", (response) => {
+        console.log("📥 Received signup response:", response);
+    
         if (response.success) {
-            showAlert("Signup successful! Redirecting...");
-            setTimeout(() => LoginPage(root), 2000);
+            console.log("✅ Signup successful:", response);
+            showAlert("✅ Signup successful! Redirecting...");
+    
+            setTimeout(() => {
+                LoginPage(root);
+            }, 2000);
         } else {
+            console.error("❌ Signup failed:", response.message);
             showAlert(response.message);
         }
     });
-
+    
     function showAlert(message) {
+        console.log("🚨 Alert:", message);
         const alertBox = root.querySelector("#alertMessage");
         const alertText = root.querySelector("#alertText");
         alertText.textContent = message;
@@ -87,15 +100,5 @@ export default function SignUpPage(root) {
         setTimeout(() => {
             alertBox.style.display = "none";
         }, 3000);
-    }
-
-    webSocketService.on("signup-response", (response) => {
-        if (response.success) {
-            showAlert("Sign up successful!");
-            setTimeout(() => LoginPage(root, 2000));
-
-        } else {
-            showAlert(response.message);
-        }
-    })
+    }    
 }

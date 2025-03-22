@@ -15,7 +15,11 @@ if (!JWT_SECRET) {
 const generateToken = (user) => {
     console.log("🛠️ Generating token for user:", user);
     return jwt.sign(
-        { id: user.id, username: user.username },
+        { 
+            id: user.id, 
+            username: user.username,
+            balance: user.balance 
+        },
         JWT_SECRET,
         { expiresIn: "1d" }
     );
@@ -111,7 +115,11 @@ export const loginUser = async (socket, username, password) => {
         delete user.pass_hash;
 
         console.log("Generating token...");
-        const token = generateToken(user);
+        const token = generateToken({
+            id: user.id,
+            username: user.username,
+            balance: user.balance
+            });
         console.log(" Token generated:", token);
 
         console.log("🚀 Login successful!");

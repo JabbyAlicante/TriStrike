@@ -72,93 +72,72 @@ async function createCustomServer() {
     }
   });
 
-  io.on('connection', (socket) => {
-    console.log(`✅ User connected: ${socket.id}`);
+//   io.use((socket, next) => {
+//     const token = socket.handshake.auth?.token;
 
-    socket.emit('welcome', 'A message from the server');
+//     if (!token) {
+//         console.error("❌ No token provided");
+//         return next(new Error("AUTH_FAILED"));
+//     }
 
-    socket.on('sign-up', async (data) => {
+//     try {
+//         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//         socket.user = { 
+//             id: decoded.id, 
+//             username: decoded.username,
+//             balance: decoded.balance // ✅ Attach balance to socket.user
+//         };
+//         next();
+//     } catch (err) {
+//         console.error("❌ Invalid token:", err.message);
+//         return next(new Error("AUTH_FAILED"));
+//     }
+// });
+
+
+
+io.on('connection', (socket) => {
+  console.log(`✅ User connected: ${socket.id}`);
+
+  socket.emit('welcome', 'A message from the server');
+
+  socket.on('sign-up', async (data) => {
       const { username, email, password } = data;
       await signupUser(socket, username, email, password);
-    });
-
-    socket.on('log-in', async (data) => {
-      const { username, password } = data;
-      await loginUser(socket, username, password);
-    });
-
-    socket.on('verify-token', async (token) => {
-      try {
-        const result = await verifyToken(token);
-        socket.emit('token-verification', result);
-      } catch (err) {
-        socket.emit('token-verification', { success: false, message: err.message });
-      }
-    });
-
-    socket.on("get-balance", async (data) => {
-      const { token } = data;
-      console.log(`💰 Balance request received from ${socket.id}`);
-      await getUserBalance(socket, token);
-    });
-
-    socket.on("deduct-balance", async (data) => {
-        const { token, amount } = data;
-        console.log(`💸 Deducting balance request from ${socket.id}`);
-        await deductBalance(socket, token, amount);
-    });
-
-    socket.on("add-prize", async (data) => {
-        const { userId, prizeAmount } = data;
-        console.log(`🏆 Adding prize to User ID: ${userId}`);
-        await addPrizeToWinner(socket, userId, prizeAmount);
-    });
-  
-
-  socket.on('get-game-state', () => {
-    const state = getGameState();
-    console.log("📡 Sending game state:", state);
-
-    if (state) {
-        socket.emit('game_update', {
-            timer: state.timer,
-            winningNumber: state.winningNumber,
-            prizePool: state.prizePool
-        });
-    } else {
-        socket.emit('game_update', {
-            error: 'Game state not available'
-        });
-    }
   });
 
+  socket.on('log-in', async (data) => {
+      const { username, password } = data;
+      await loginUser(socket, username, password);
+  });
 
   socket.on('place-bet', async (data) => {
-    const userId = socket.user?.id;
-    const { gameId, chosenNumbers, betAmount } = data;
+    const { token, gameId, chosenNumbers, betAmount } = data;
 
-    console.log(`🎲 User ${userId} is placing a bet of ${betAmount} on Game ${gameId}`);
-
-    if (!userId) {
-        console.error("❌ Error: User is not authenticated.");
-        socket.emit('bet_failed', { message: "User is not authenticated." });
+    if (!token) {
+        socket.emit('bet_failed', { message: "Token is missing." });
         return;
     }
 
+    const { success, user } = await verifyToken(token);
+    if (!success) {
+        socket.emit('bet_failed', { message: "Invalid or expired token." });
+        return;
+    }
+
+    console.log(`🎲 User ${user.id} is placing a bet`);
+
     try {
-        const result = await placeBet(userId, gameId, chosenNumbers, betAmount);
-        if (result.success) {
-            socket.emit('bet_success', result);
-        } else {
-            socket.emit('bet_failed', result);
-        }
+        await placeBet(socket, gameId, chosenNumbers, betAmount, user); 
     } catch (error) {
         console.error(`❌ Error placing bet: ${error.message}`);
         socket.emit('bet_failed', { message: "Failed to place bet." });
     }
   });
 
-    socket.on('game_end', async (gameId) => {
+
+
+  socket.on('game_end', async (gameId) => {
       console.log(`🛑 Ending game with ID: ${gameId}`);
   
       if (!gameId) {
@@ -184,9 +163,9 @@ async function createCustomServer() {
               error: err.message
           });
       }
-    });
+  });
 
-    socket.on("buy_coins", async (data) => {
+  socket.on("buy_coins", async (data) => {
       const { token, amount } = data;
 
       if (!token) {
@@ -199,13 +178,12 @@ async function createCustomServer() {
           return;
       }
 
-      console.log(`💰 Balance request received from ${socket.id}`);
+      console.log(`💰 Buying coins request from ${socket.id}`);
 
       await strikeStore(socket, token, amount);
   });
-  
 
-    socket.on('disconnect', () => {
+  socket.on('disconnect', () => {
       console.log(`❌ User disconnected: ${socket.id}`);
     });
   });
