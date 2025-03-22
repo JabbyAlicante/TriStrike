@@ -41,88 +41,98 @@ export default function LoginPage(root) {
   `;
 
   const token = localStorage.getItem("authToken");
-  if (token) {
-    console.log("✅ Token exists in localStorage:", token);
+    if (token) {
+      console.log("✅ Token exists in localStorage:", token);
 
-    console.log("🔒 Authenticating with existing token...");
-    webSocketService.send("authenticate", token);
+      console.log("🔒 Verifying existing token...");
+      webSocketService.send("verify-token", token);
 
-    setTimeout(() => {
-      console.log("➡️ Redirecting to Home Page...");
-      HomePage(root);
-    }, 1000);
-  }
+      webSocketService.on("token-verification", (response) => {
+        if (response.success) {
+          console.log("✅ Token verification successful");
 
-  root.querySelector(".mini-logo").addEventListener("click", () => {
-    console.log("🏠 Redirecting to Landing Page...");
-    LandingPage(root);
-  });
+          if (response.user) {
+            localStorage.setItem("userBalance", response.user.balance);
+            console.log("💰 User balance:", response.user.balance);
+          }
 
-  const logSignUp = root.querySelector(".login-text");
-  if (logSignUp) {
-    logSignUp.addEventListener("click", () => {
-      console.log("✍️ Redirecting to Sign Up Page...");
-      LogSignUpPage(root);
-    });
-  }
-
-  const loginForm = root.querySelector("#login-form");
-  loginForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const username = root.querySelector("#username").value.trim();
-    const password = root.querySelector("#password").value.trim();
-
-    if (!username || !password) {
-      console.warn("⚠️ Missing fields");
-      showAlert("Please fill in all required fields!");
-      return;
+          console.log("➡️ Redirecting to Home Page...");
+          HomePage(root);
+        } else {
+          console.error("❌ Token verification failed:", response.message);
+          showAlert(response.message);
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("userBalance");
+        }
+      });
     }
 
-    console.log("📤 Sending login request:", { username, password });
+    root.querySelector(".mini-logo").addEventListener("click", () => {
+      console.log("🏠 Redirecting to Landing Page...");
+      LandingPage(root);
+    });
 
-    webSocketService.send("log-in", { username, password });
-  });
+    const logSignUp = root.querySelector(".login-text");
+    if (logSignUp) {
+      logSignUp.addEventListener("click", () => {
+        console.log("✍️ Redirecting to Sign Up Page...");
+        LogSignUpPage(root);
+      });
+    }
+
+    const loginForm = root.querySelector("#login-form");
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const username = root.querySelector("#username").value.trim();
+      const password = root.querySelector("#password").value.trim();
+
+      if (!username || !password) {
+        console.warn("⚠️ Missing fields");
+        showAlert("Please fill in all required fields!");
+        return;
+      }
+
+      console.log("📤 Sending login request:", { username, password });
+
+      webSocketService.send("log-in", { username, password });
+    });
 
     webSocketService.on("login-response", (response) => {
-    console.log("📥 Received login response:", response);
-  
-    if (response.success) {
-      console.log("✅ Login successful:", response);
-  
-      showAlert("✅ Login successful! Redirecting...");
+      console.log("📥 Received login response:", response);
 
-      localStorage.setItem("authToken", response.token);
-      sessionStorage.setItem("userId", response.user.id);
-      localStorage.setItem("userBalance", response.user.balance);
-      console.log("💰 User balance:", response.user.balance);
-      // updateBalance(response.user.balance);
+      if (response.success) {
+        console.log("✅ Login successful:", response);
 
-      console.log("💾 Token and userId saved");
-      console.log("🔍 Checking token in localStorage:", localStorage.getItem("authToken"));
+        showAlert("✅ Login successful! Redirecting...");
 
-      console.log("🔒 Authenticating...");
-      webSocketService.send("authenticate", response.token);
-  
+        localStorage.setItem("authToken", response.token);
+        sessionStorage.setItem("userId", response.user.id);
+        localStorage.setItem("userBalance", response.user.balance);
+        console.log("💰 User balance:", response.user.balance);
+
+        console.log("🔒 Verifying token after login...");
+        webSocketService.send("verify-token", response.token);
+
+        setTimeout(() => {
+          console.log("➡️ Redirecting to Home Page...");
+          HomePage(root);
+        }, 2000);
+      } else {
+        console.error("❌ Login failed:", response.message);
+        showAlert(response.message);
+      }
+    });
+
+    function showAlert(message) {
+      console.log("🚨 Alert:", message);
+      const alertBox = root.querySelector("#alertMessage");
+      const alertText = root.querySelector("#alertText");
+      alertText.textContent = message;
+      alertBox.style.display = "block";
       setTimeout(() => {
-        console.log("➡️ Redirecting to Home Page...");
-        HomePage(root);
-      }, 2000);
-    } else {
-      console.error("❌ Login failed:", response.message);
-      showAlert(response.message);
+        alertBox.style.display = "none";
+      }, 3000);
     }
-  });
-  
 
-  function showAlert(message) {
-    console.log("🚨 Alert:", message);
-    const alertBox = root.querySelector("#alertMessage");
-    const alertText = root.querySelector("#alertText");
-    alertText.textContent = message;
-    alertBox.style.display = "block";
-    setTimeout(() => {
-      alertBox.style.display = "none";
-    }, 3000);
-  }
 }

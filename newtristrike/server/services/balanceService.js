@@ -1,179 +1,150 @@
 import db from "../config/db.js";
-import { verifyToken } from "./userService.js";
 
-export async function getUserBalance(socket, token) {
-    const { success, user } = await verifyToken(token);
-    if (!success) {
-        socket.emit("balance_failed", {
-            success: false,
-            code: "INVALID_TOKEN",
-            message: "Invalid or expired token"
-        });
-        return;
-    }
-
-    const userId = user.id;
+export async function getUserBalance(userId) {
     console.log(`💰 Fetching balance for User ID: ${userId}`);
 
     try {
-        const [[user]] = await db.query(
+        const [results] = await db.query(
             `SELECT username, balance FROM users WHERE id = ?`,
             [userId]
         );
 
-        if (!user) {
-            console.warn(`⚠ User ID ${userId} not found.`);
-            socket.emit("balance_failed", {
-                success: false,
-                code: "USER_NOT_FOUND",
-                message: "User not found",
-                userId
-            });
-            return;
+        if (results.length === 0) {
+            throw new Error("USER_NOT_FOUND");
         }
 
-        const { username, balance } = user;
-        console.log(`✅ User ${username} (${userId}) balance: ${balance}`);
+        const { username, balance } = results[0];
+        console.log(`✅ User ${username} balance: ${balance}`);
 
-        socket.emit("balance_success", {
-            success: true,
-            userId,
-            username,
-            balance
-        });
+        return { username, balance };
     } catch (err) {
-        console.error(`❌ Error fetching balance for User ${userId}:`, err);
-
-        socket.emit("balance_failed", {
-            success: false,
-            code: "BALANCE_FETCH_ERROR",
-            message: "Error fetching balance",
-            userId
-        });
+        console.error(`❌ Error fetching balance:`, err);
+        throw err;
     }
 }
 
-export async function deductBalance(socket, token, amount) {
-    if (amount <= 0) {
-        console.warn(`⚠ Invalid deduction amount: ${amount}`);
-        socket.emit("balance_failed", {
-            success: false,
-            code: "INVALID_DEDUCTION_AMOUNT",
-            message: "Invalid deduction amount"
-        });
-        return;
-    }
+export async function deductBalance(userId, amount) {
+    if (amount <= 0) throw new Error("INVALID_DEDUCTION_AMOUNT");
 
-    const { success, user } = await verifyToken(token);
-    if (!success) {
-        socket.emit("balance_failed", {
-            success: false,
-            code: "INVALID_TOKEN",
-            message: "Invalid or expired token"
-        });
-        return;
-    }
+    console.log(`🛠 Deducting ${amount} coins from User ID: ${userId}`);
 
-    const userId = user.id;
-    console.log(`🛠 deductBalance() CALLED! Amount: ${amount}, User ID: ${userId}`);
-
+    let connection;
     try {
-        const [results] = await db.query(
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        const [results] = await connection.query(
             `SELECT username, balance FROM users WHERE id = ? FOR UPDATE`,
             [userId]
         );
 
         if (results.length === 0) {
-            console.warn(`⚠ User ${userId} not found.`);
-            socket.emit("balance_failed", {
-                success: false,
-                code: "USER_NOT_FOUND",
-                message: "User not found"
-            });
-            return;
+            await connection.rollback();
+            throw new Error("USER_NOT_FOUND");
         }
 
-        const { username, balance: currentBalance } = results[0];
-        console.log(`💰 Current Balance for User ${username} (${userId}): ${currentBalance}`);
+        const { balance: currentBalance } = results[0];
 
         if (currentBalance < amount) {
-            console.warn(`⚠ User ${username} has insufficient balance.`);
-            socket.emit("balance_failed", {
-                success: false,
-                code: "INSUFFICIENT_BALANCE",
-                message: "Insufficient balance",
-                userId,
-                username,
-                balance: currentBalance
-            });
-            return;
+            await connection.rollback();
+            throw new Error("INSUFFICIENT_BALANCE");
         }
 
-        await db.query(
+        await connection.query(
             `UPDATE users SET balance = balance - ? WHERE id = ?`,
             [amount, userId]
         );
 
-        const newBalance = await getBalance(userId);
-        console.log(`✅ ${amount} deducted from User ${username} (${userId}). New balance: ${newBalance}`);
+        await connection.commit();
 
-        socket.emit("balance_success", {
-            success: true,
-            userId,
-            username,
-            balance: newBalance,
-            message: `Successfully deducted ${amount} coins.`
-        });
+        const newBalance = currentBalance - amount;
+        console.log(`✅ Deducted ${amount}. New balance: ${newBalance}`);
+
+        return newBalance;
     } catch (err) {
-        console.error(`❌ Error deducting balance for User ${userId}:`, err);
-
-        socket.emit("balance_failed", {
-            success: false,
-            code: "BALANCE_DEDUCTION_ERROR",
-            message: "Error deducting balance"
-        });
+        if (connection) await connection.rollback();
+        console.error(`❌ Error deducting balance:`, err);
+        throw err;
+    } finally {
+        if (connection) connection.release();
     }
 }
 
-export async function addPrizeToWinner(socket, userId, prizeAmount) {
-    console.log(`🎯 Adding prize of ${prizeAmount} to User ID: ${userId}`);
+export async function addPrizeToWinner(userId, prizeAmount) {
+    console.log(`🎯 Adding ${prizeAmount} coins to User ID: ${userId}`);
 
+    let connection;
     try {
-        await db.query(
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        await connection.query(
             `UPDATE users SET balance = balance + ? WHERE id = ?`,
             [prizeAmount, userId]
         );
 
         const newBalance = await getBalance(userId);
-        const { username } = await getUserInfo(userId);
+        const user = await getUserInfo(userId);
 
-        console.log(`✅ User ${username} (${userId}) new balance: ${newBalance}`);
+        if (!user) {
+            await connection.rollback();
+            throw new Error("USER_NOT_FOUND");
+        }
 
-        socket.emit("prize_success", {
-            success: true,
+        console.log(`✅ User ${user.username} new balance: ${newBalance}`);
+
+        await connection.commit();
+
+        return {
             userId,
-            username,
+            username: user.username,
             balance: newBalance,
-            prizeAmount,
-            message: `You won ${prizeAmount} coins!`
-        });
+            prizeAmount
+        };
     } catch (err) {
-        console.error(`❌ Error adding prize to User ${userId}:`, err);
-
-        socket.emit("prize_failed", {
-            success: false,
-            code: "PRIZE_ADDITION_ERROR",
-            message: "Error adding prize"
-        });
+        if (connection) await connection.rollback();
+        console.error(`❌ Error adding prize:`, err);
+        throw err;
+    } finally {
+        if (connection) connection.release();
     }
 }
 
 export async function getBalance(userId) {
-    const [result] = await db.query("SELECT balance FROM users WHERE id = ?", [userId]);
-    return result.length > 0 ? result[0].balance : null;
+    let connection;
+    try {
+        connection = await db.getConnection();
+
+        const [results] = await connection.query(
+            `SELECT balance FROM users WHERE id = ?`,
+            [userId]
+        );
+
+        return results.length > 0 ? results[0].balance : null;
+    } catch (err) {
+        console.error(`❌ Error getting balance:`, err);
+        return null;
+    } finally {
+        if (connection) connection.release();
+    }
 }
 
+
 export async function getUserInfo(userId) {
-    const [result] = await db.query("SELECT id, username FROM users WHERE id = ?", [userId]);
-    return result.length > 0 ? result[0] : null;
+    let connection;
+    try {
+        connection = await db.getConnection();
+
+        const [results] = await connection.query(
+            `SELECT id, username FROM users WHERE id = ?`,
+            [userId]
+        );
+
+        return results.length > 0 ? results[0] : null;
+    } catch (err) {
+        console.error(`❌ Error getting user info:`, err);
+        return null;
+    } finally {
+        if (connection) connection.release();
+    }
 }
