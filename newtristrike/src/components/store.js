@@ -16,7 +16,6 @@ export default function store(root) {
                         <div class="dropdown" id="dropdown">
                             <ul>
                                 <li id="home">Home</li>
-                                <li id="history">History</li>
                                 <li id="logout">Logout</li>
                             </ul>
                         </div>
@@ -27,7 +26,6 @@ export default function store(root) {
             <div class="dropdown" id="dropdown">
                 <ul>
                     <li id="home">Home</li>
-                    <li id="history">History</li>
                     <li id="logout">Logout</li>
                 </ul>
             </div>
