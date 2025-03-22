@@ -1,21 +1,7 @@
 import '../styles/store.css';
 import webSocketService from '../core/websocketClient';
 
-function updateBalance(balance) {
-    const balElement = document.querySelector(".money");
-    if (balElement) {
-        balElement.textContent = `Balance: ${balance} coins`;
-        console.log(`✅ Balance updated: ${balance} coins`);
-    } else {
-        console.error("❌ Error: Balance element not found in the DOM");
-    }
-}
 
-
-const storedBalance = sessionStorage.getItem("updatedUserBalance");
-    if (storedBalance !== null) {
-        updateBalance(storedBalance);
-}
 
 export default function store(root) {
     root.innerHTML = `
@@ -48,7 +34,7 @@ export default function store(root) {
 
             <!-- Coin Store Section -->
             <div class="store-container">
-                <div class="user-balance" id="balance-display">Balance: ${storedBalance}</div>
+                <div class="user-balance" id="balance-display">Balance: Loading...</div>
                 <h1>Buy Coins</h1>
                 <div class="coin-packages">
                     <div class="package">
