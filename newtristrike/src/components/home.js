@@ -245,7 +245,7 @@ export default function HomePage(root) {
         </section>
 
         <div class="bottom-nav">
-            <p class="money">Balance: ${storedBalance} coins</p>
+            <p class="money" id="money">Balance: ${storedBalance} coins</p>
             <div class="prize-pool">
                 <h1 class="pp-name">Prize Pool</h1>
                 <h1 class="prize">--</h1>
@@ -307,7 +307,16 @@ export default function HomePage(root) {
         webSocketService.on('bet_success', (response) => {
             console.log(`✅ Bet successful!`, response);
 
-            
+            // const updatedUserBal = response.balance;
+            // localStorage.setItem("updatedUserBal", response.balance);
+            // updateBalance(response.balance);
+
+            const updatedUserBal = response.balance;
+            sessionStorage.setItem("updatedUserBal", updatedUserBal);
+            localStorage.setItem("userBalance", updatedUserBal); 
+
+            const balanceElement = document.getElementById('money');
+            balanceElement.textContent = `Balance: ${updatedUserBal} coins`;
 
             alert(`✅ Bet successful! You won ${response.prize || 0} coins.`);
 
@@ -397,4 +406,22 @@ cards.forEach(card => {
 
 
     }, 0);
+
+    document.addEventListener("DOMContentLoaded", () => {
+    const storedBalance = localStorage.getItem("userBalance");
+
+    if (storedBalance !== null) {
+        updateBalance(storedBalance);
+    }
+    // const lessBet = localStorage.getItem("updatedUserBal")
+    // if (storedBalance == storedBalance) {
+    //     updateBalance(lessBet);
+    // }
+
+    // else {
+    //     const newBalance = localStorage.getItem("newBalance");
+    //     updateBalance(newBalance);
+    // }
+});
+
 }

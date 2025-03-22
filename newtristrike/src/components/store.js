@@ -2,6 +2,25 @@ import '../styles/store.css';
 import webSocketService from '../core/websocketClient';
 
 
+const updatedBalance = sessionStorage.getItem("updatedUserBal");
+
+function updateBalance(balance) {
+    const balElement = document.querySelector(".money");
+    if (balElement) {
+        balElement.textContent = `Balance: ${balance} coins`;
+        console.log(`✅ Balance updated: ${balance} coins`);
+    } else {
+        console.error("❌ Error: Balance element not found in the DOM");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const storedBalance = localStorage.getItem("userBalance");
+    if (storedBalance !== null) {
+        updateBalance(storedBalance);
+    }
+});
+    
 
 export default function store(root) {
     root.innerHTML = `
@@ -34,7 +53,7 @@ export default function store(root) {
 
             <!-- Coin Store Section -->
             <div class="store-container">
-                <div class="user-balance" id="balance-display">Balance: Loading...</div>
+                <div class="user-balance" id="balance-display">Balance: ${updatedBalance}</div>
                 <h1>Buy Coins</h1>
                 <div class="coin-packages">
                     <div class="package">
@@ -112,8 +131,23 @@ export default function store(root) {
         console.log("📦 Strike store response received:", response);
     
         if (response.success) {
+            // const balanceElement = document.getElementById('balance-display');
+            // balanceElement.textContent = `Balance: ${response.data.newBalance} coins`;
+
+            // localStorage.setItem("newBalance", response.data.newBalance);
+            // console.log("New Balance after purchasing: ", response.data.newBalance);
+
+            const newBalance = response.data.newBalance;
+        
+            
+            localStorage.setItem("userBalance", newBalance);
+            sessionStorage.setItem("updatedUserBal", newBalance);
+
             const balanceElement = document.getElementById('balance-display');
-            balanceElement.textContent = `Balance: ${response.data.newBalance} coins`;
+            if (balanceElement) {
+                balanceElement.textContent = `Balance: ${newBalance} coins`;
+            }
+
             
             alert(`✅ Purchase successful! Your new balance is ${response.data.newBalance} coins.`);
         } else {
