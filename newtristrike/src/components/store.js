@@ -1,28 +1,32 @@
 import '../styles/store.css';
 import webSocketService from '../core/websocketClient';
+import HomePage from './home'
 
 
-const updatedBalance = sessionStorage.getItem("updatedUserBal");
 
-function updateBalance(balance) {
-    const balElement = document.querySelector(".money");
-    if (balElement) {
-        balElement.textContent = `Balance: ${balance} coins`;
-        console.log(`✅ Balance updated: ${balance} coins`);
-    } else {
-        console.error("❌ Error: Balance element not found in the DOM");
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    const storedBalance = localStorage.getItem("userBalance");
-    if (storedBalance !== null) {
-        updateBalance(storedBalance);
-    }
-});
     
 
 export default function store(root) {
+
+    const updatedBalance = sessionStorage.getItem("updatedUserBal");
+
+    function updateBalance(balance) {
+        const balElement = document.querySelector(".money");
+        if (balElement) {
+            balElement.textContent = `Balance: ${balance} coins`;
+            console.log(`✅ Balance updated: ${balance} coins`);
+        } else {
+            console.error("❌ Error: Balance element not found in the DOM");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const storedBalance = localStorage.getItem("userBalance");
+        if (storedBalance !== null) {
+            updateBalance(storedBalance);
+        }
+    });
+
     root.innerHTML = `
         <div class="body">
             <header class="header">
@@ -229,7 +233,8 @@ export default function store(root) {
         if (home) {
             homeButton.addEventListener('click', () => {
                 console.log('Redirecting to dashboard...');
-                window.location.href = '/home';
+                // window.location.href = '/home';
+                HomePage(root);
             });
         }
 

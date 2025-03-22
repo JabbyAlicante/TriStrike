@@ -1,6 +1,7 @@
 import '../styles/home.css';
 import '../styles/home_mq.css';
 import webSocketService from '../core/websocketClient';
+import store from './store';
 
 export default function HomePage(root) {
     console.log("Initializing HomePage component...");
@@ -400,7 +401,8 @@ cards.forEach(card => {
         if (coinButton) {
             coinButton.addEventListener('click', () => {
                 console.log('Redirecting to dashboard...');
-                window.location.href = '/store';
+                // window.location.href = '/store';
+                store(root);
             });
         }
 
