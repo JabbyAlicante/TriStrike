@@ -314,16 +314,16 @@
   }
 
   .welcome-title {
-    height: 400px;
-    margin-top: 5rem;
-    margin-bottom: 8rem;
+    height: 300px;
+    margin-top: 8rem;
+    margin-bottom: 1rem;
     display: flex;
     justify-content: flex-start;
   }
 
   .welcome-title img {
     width: 80%;
-    margin-left: -22rem;
+    margin-left: -15rem;
     clip-path: inset(0 0 0 6%);
     margin-top: -20rem;
     padding-bottom: 0;
@@ -339,16 +339,16 @@
   }
 
   .tagline {
-    margin-top: 9rem;
+    margin-top: -1rem;
     margin-bottom: 0;
     font-size: 40px;
-    margin-left: 13rem;
+    margin-left: 10rem;
   }
 
   .play-button {
     bottom: 4rem;
     /* top: 15rem; */
-    margin-right: 28rem;
+    margin-right: 18rem;
   }
 
   .play-start {

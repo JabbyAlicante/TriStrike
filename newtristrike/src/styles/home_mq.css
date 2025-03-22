@@ -39,6 +39,10 @@
         height: 6rem;
     }
 
+    .prize-pool {
+        gap: 13px;
+    }
+
     .money, .prize, .pp-name {
         font-size: 30px;
     }
