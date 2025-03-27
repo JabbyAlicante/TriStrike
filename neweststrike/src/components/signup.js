@@ -4,10 +4,9 @@ import LogSignUpPage from "./logSignUp";
 import LoginPage from "./login";
 
 export default function SignUpPage(root, socket) {
-    // ✅ Attempt to reconnect if the socket is not connected
     if (!socket || !socket.connected) {
         console.warn("⚠️ Socket not connected, attempting to reconnect...");
-        socket.connect(); // Try reconnecting
+        socket.connect();
     }
 
     root.innerHTML = `
@@ -46,22 +45,19 @@ export default function SignUpPage(root, socket) {
       </div>
     `;
 
-    // ✅ Redirect to Landing Page
     root.querySelector(".mini-logo").addEventListener("click", () => {
         console.log("🏠 Redirecting to Landing Page...");
         LandingPage(root, socket);
     });
 
-    // ✅ Redirect to Login Page
     const logSignUp = root.querySelector(".login-text");
     if (logSignUp) {
         logSignUp.addEventListener("click", () => {
             console.log("✍️ Redirecting to Login Page...");
-            LoginPage(root, socket); // Fixed redirect to login page
+            LoginPage(root, socket);
         });
     }
 
-    // ✅ Handle Signup Form Submission
     const signupForm = root.querySelector("#signup-form");
     signupForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -78,11 +74,9 @@ export default function SignUpPage(root, socket) {
 
         console.log("📤 Sending 'sign-up' event:", { username, email, password });
 
-        // ✅ Emit signup event through socket
         socket.emit("sign-up", { username, email, password });
     });
 
-    // ✅ Clean up previous socket listener to avoid duplicates
     socket.off("signup-response");
     socket.on("signup-response", (response) => {
         console.log("📥 Received signup response:", response);
@@ -100,7 +94,6 @@ export default function SignUpPage(root, socket) {
         }
     });
 
-    // ✅ Alert Function
     function showAlert(message) {
         console.log("🚨 Alert:", message);
         const alertBox = root.querySelector("#alertMessage");

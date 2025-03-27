@@ -12,7 +12,6 @@ class SPA {
    */
   routes = [];
 
-  // ✅ Socket service logic
   socket = null;
   isConnected = false;
 
@@ -61,7 +60,6 @@ class SPA {
       callback: (config?.defaultRoute || (() => { })).bind(this.context),
     };
 
-    // ✅ Initialize socket connection
     this.initializeSocket();
   }
 
@@ -112,7 +110,6 @@ class SPA {
       }
     }
 
-    // ✅ Pass socket and params to the callback
     route?.callback(this.socket, params);
   }
 
@@ -154,7 +151,6 @@ class SPA {
                   history.pushState({}, '', e.target.href);
                   this.execute(window.location.pathname);
 
-                  // simulate scroll into
                   if (targetUrl.hash) {
                     const focusElem = document.querySelector(targetUrl.hash);
                     focusElem && setTimeout(() => {

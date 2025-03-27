@@ -159,7 +159,7 @@ async function createNewGame(io) {
 }
 
 async function carryOverPrizePool(io) {
-    if (!isHost) return; // Only master server should handle this
+    if (!isHost) return;
     
     try {
         const [previousGame] = await db.query(
