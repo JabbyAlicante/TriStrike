@@ -14,7 +14,7 @@ export default class LoginPage {
   }
 
   render() {
-    console.log("🔌 Connecting to WebSocket...");
+    console.log("🔌 Connecting to WebSocket login...");
   
     if (!this.socket || !this.socket.connected) {
       console.warn("⚠️ Socket not connected");
@@ -116,3 +116,4 @@ export default class LoginPage {
     });
   }
 }
+

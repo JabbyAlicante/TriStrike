@@ -46,7 +46,6 @@ app.setRouteGuard('/dashboard', (state) => {
   return true;
 });
 
-// if user not connected back to log in
 app.setRouteGuard('/store', (state) => {
   if (!state?.isLoggedIn) {
     console.warn('⚠️ User not authenticated. Redirecting to /login');

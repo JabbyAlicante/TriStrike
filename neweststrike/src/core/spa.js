@@ -69,7 +69,7 @@ class SPA {
     });
     
 
-    // Handle state updates from master server
+    // ✅ Handle state updates from master server
     this.socket.on('state_update', (state) => {
       if (!this.shouldIgnoreState) {
         console.log('🔄 State update received:', state);
@@ -101,7 +101,7 @@ class SPA {
       callback: (config?.defaultRoute || (() => {})).bind(this.context),
     };
 
-    //  Initialize socket connection with custom server URL
+    // ✅ Initialize socket connection with custom server URL
     this.initializeSocket(config.serverUrl);
   }
 
@@ -158,7 +158,7 @@ class SPA {
       params = Object.fromEntries(searchParams.entries());
     }
 
-    //  Route guard
+    // ✅ Route guard
     if (this.routeGuards[route.key]) {
       const allow = this.routeGuards[route.key](state);
       if (!allow) {

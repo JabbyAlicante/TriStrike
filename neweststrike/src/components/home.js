@@ -1,6 +1,5 @@
 import '../styles/home.css';
 import '../styles/home_mq.css';
-// import webSocketService from '../core/websocketClient';
 import store from './store';
 
 export default function HomePage(root) {
