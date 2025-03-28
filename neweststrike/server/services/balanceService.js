@@ -1,11 +1,12 @@
+import { io, Socket } from "socket.io-client";
 import db from "../config/db.js";
 
-export async function getUserBalance(userId) {
+export async function getUserBalance(userId, socket) {
     console.log(`💰 Fetching balance for User ID: ${userId}`);
 
     try {
         const [results] = await db.query(
-            `SELECT username, balance FROM users WHERE id = ?`,
+            `SELECT id, username, balance FROM users WHERE id = ?`,
             [userId]
         );
 
@@ -13,13 +14,24 @@ export async function getUserBalance(userId) {
             throw new Error("USER_NOT_FOUND");
         }
 
-        const { username, balance } = results[0];
-        console.log(`✅ User ${username} balance: ${balance}`);
+        const { id, username, balance } = results[0];
+        console.log(`✅ User ${username} (ID: ${id}) balance: ${balance}`);
 
-        return { username, balance };
+        socket.emit('balance-response', {
+            userId: id,
+            username,
+            balance
+        });
+        console.log(`📢 Emitted balance update for User ID: ${userId}`);
+
+        return { id, username, balance };
     } catch (err) {
         console.error(`❌ Error fetching balance:`, err);
-        throw err;
+        socket.emit('balance-response', { 
+            success: false, 
+            message: "Failed to fetch balance.", 
+            error: err.message 
+        });
     }
 }
 

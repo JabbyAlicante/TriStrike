@@ -13,6 +13,7 @@ import { startGameService, getGameState } from './services/gameService.js';
 import { placeBet } from './services/betsService.js';
 import { distributePrizePool } from './services/prizeService.js';
 import { strikeStore } from './services/store.js';
+import { getBalance } from './services/balanceService.js';
 
 dotenv.config();
 
@@ -138,6 +139,23 @@ async function createCustomServer() {
 
       const { username, password } = data;
       await loginUser(socket, username, password);
+    });
+
+    // --------------------- BALANCE -------------------------
+
+    socket.on('user-balance', async (data) => {
+      if (!isHost) {
+        console.log('Forwarding user balance request to master');
+        masterSocket.emit('user-balance', data);
+
+        masterSocket.once('balance-response', (response) =>{
+          console.log('⬅️ Received balance response from master');
+          socket.emit('balance-response', response);
+
+          io.emit('balance-update', { balance: response.balance });
+        });
+        return;
+      }
     });
 
     // ---------------------- PLACE BET ----------------------

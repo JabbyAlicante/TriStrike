@@ -101,7 +101,7 @@ class SPA {
       callback: (config?.defaultRoute || (() => {})).bind(this.context),
     };
 
-    // ✅ Initialize socket connection with custom server URL
+    // Initialize socket connection with custom server URL
     this.initializeSocket(config.serverUrl);
   }
 

@@ -57,11 +57,15 @@ const HomePage = class {
       console.warn("⚠️ Socket not connected");
     }
     this.socket.on("state_update", this.handleGameUpdate.bind(this));
-    this.socket.on("balance_update", (data) => {
-      console.log("📥 Received balance update:", data);
-      localStorage.setItem("userBalance", data.balance);
-      this.updateBalance(data.balance);
+    this.socket.on('balance-update', (data) => {
+      console.log('📥 Balance updated:', data);
+      if (data && typeof data.balance !== 'undefined') {
+          console.log(`💰 New user balance: ${data.balance}`);
+          localStorage.setItem('userBalance', data.balance);
+          updateBalance(data.balance);
+      }
     });
+    
     this.socket.on("connect", () => {
       console.log("✅ Socket reconnected on HomePage. Re-authenticating...");
       const token = localStorage.getItem("authToken");
@@ -154,59 +158,59 @@ const HomePage = class {
     placeBetButton.addEventListener("click", () => {
       if (this.betPlaced) {
         console.error("❌ Bet already placed!");
-        alert("You have already placed a bet for this round.");
+        alert("⚠️ You have already placed a bet for this round! Please wait for the next round.");
         return;
       }
+    
       if (this.flippedCards.length !== 3) {
         console.error("❌ You must select exactly 3 cards to place a bet.");
-        alert("You must select exactly 3 cards to place a bet.");
+        alert("⚠️ You must select exactly 3 cards to place a bet.");
         return;
       }
-
-      
+    
       const chosenNumbers = this.flippedCards.map(card =>
         parseInt(card.getAttribute("data-card-number"), 10)
       );
-
+    
       const betAmount = 20;
       const gameId = sessionStorage.getItem("gameId");
       if (!gameId) {
         console.error("❌ No active game found.");
-        alert("No active game found. Please start a new game.");
+        alert("⚠️ No active game found. Please start a new game.");
         return;
       }
+    
       const token = localStorage.getItem("authToken");
       if (!token) {
         console.error("❌ User not authenticated.");
-        alert("Please log in to place a bet.");
+        alert("⚠️ Please log in to place a bet.");
         return;
       }
-
+    
       console.log(
         `🎯 Placing bet with numbers: ${chosenNumbers.join(", ")}, Amount: ${betAmount}, Game Id: ${gameId}`
       );
-
-     
+    
       this.socket.emit("place-bet", { gameId, chosenNumbers, betAmount, token });
       this.betPlaced = true;
       placeBetButton.disabled = true;
-
-      
+    
+      alert("✅ Bet placed successfully!");
+    
       this.socket.on("bet_success", (response) => {
         console.log("✅ Bet successful!", response);
         const updatedUserBal = response.balance;
         localStorage.setItem("userBalance", updatedUserBal);
         sessionStorage.setItem("updatedUserBal", updatedUserBal);
-        const balanceElement = this.root.querySelector("#money");
-        balanceElement.textContent = `Balance: ${updatedUserBal} coins`;
-        alert("✅ Bet successful! :D");
-
-        
+        this.updateBalance(updatedUserBal);
+        alert("✅ Bet successful!");
+    
         if (token) {
           this.socket.emit("get-balance", { token });
         }
         this.resetCards();
       });
+    
       this.socket.on("bet_failed", (response) => {
         console.error(`❌ Bet failed: ${response.message}`);
         alert(`❌ Bet failed: ${response.message}`);
@@ -214,6 +218,7 @@ const HomePage = class {
         placeBetButton.disabled = false;
       });
     });
+    
 
     setTimeout(() => {
         const userProfile = this.root.querySelector('.user-profile');
