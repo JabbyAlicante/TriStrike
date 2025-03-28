@@ -71,9 +71,9 @@ async function createCustomServer() {
         console.error('❌ Error starting game service:', err);
       }
     } else {
-      //  Socket for client events
+
       masterSocket = Client(`http://localhost:${HOST_PORT}`, {
-        transports: ['websocket'], 
+        transports: ['websocket'],
       });
 
       masterSocket.on('connect', () => {
@@ -84,7 +84,6 @@ async function createCustomServer() {
         console.log('❌ Disconnected from master server');
       });
 
-      //  Dedicated socket for polling state updates
       stateSocket = Client(`http://localhost:${HOST_PORT}`, {
         transports: ['polling'],
       });

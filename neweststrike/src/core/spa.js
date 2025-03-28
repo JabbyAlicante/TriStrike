@@ -1,16 +1,15 @@
 import { io } from 'socket.io-client';
 
 class SPA {
-  /**
-   * @typedef {Object} Route
-   * @property {string | RegExp} key
-   * @property {Function} callback
-   */
   routes = [];
-
   socket = null;
   isConnected = false;
   shouldIgnoreState = true;
+
+  beforeRouteChange = null;
+  onStateChange = null;
+  onDisconnect = null;
+  routeGuards = {};
 
   async initializeSocket(serverUrl) {
     if (typeof window === 'undefined') return;
@@ -22,14 +21,13 @@ class SPA {
       return;
     }
 
-    // ✅ Support for master/slave URL
-    const socketUrl = serverUrl || window.location.origin;
+    const socketUrl = serverUrl || import.meta.env.VITE_SERVER_URL || window.location.origin;
 
     window.__IO__ = io(socketUrl, {
       transports: ['websocket', 'polling'],
-      reconnection: true, // ✅ Enable auto-reconnection
-      reconnectionAttempts: 5, // ✅ Try reconnecting 5 times
-      reconnectionDelay: 1000, // ✅ Delay between attempts (1 second)
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     this.socket = window.__IO__;
@@ -43,13 +41,42 @@ class SPA {
     this.socket.on('disconnect', () => {
       this.isConnected = false;
       console.log('❌ Disconnected from socket');
+      if (typeof this.onDisconnect === 'function') {
+        this.onDisconnect();
+      }
     });
 
-    // ✅ Handle state updates from master server
+    this.socket.on('connect_error', (error) => {
+      console.error('❌ Socket connection error:', error);
+    });
+
+    this.socket.on('signup-response', (response) => {
+      console.log('🆕 Signup response:', response);
+      if (response.success) {
+        alert('Signup successful! Welcome to the game.');
+      } else {
+        alert(`Signup failed: ${response.message}`);
+      }
+    });
+    
+    this.socket.on('login-response', (response) => {
+      console.log('🔐 Login response:', response);
+      if (response.success) {
+        alert('Login successful! Welcome back.');
+      } else {
+        alert(`Login failed: ${response.message}`);
+      }
+    });
+    
+
+    // Handle state updates from master server
     this.socket.on('state_update', (state) => {
       if (!this.shouldIgnoreState) {
         console.log('🔄 State update received:', state);
         this.execute(window.location.pathname, state);
+        if (typeof this.onStateChange === 'function') {
+          this.onStateChange(state);
+        }
       }
     });
   }
@@ -71,10 +98,10 @@ class SPA {
 
     this.defaultRoute = {
       key: '*',
-      callback: (config?.defaultRoute || (() => { })).bind(this.context),
+      callback: (config?.defaultRoute || (() => {})).bind(this.context),
     };
 
-    // ✅ Initialize socket connection with custom server URL
+    //  Initialize socket connection with custom server URL
     this.initializeSocket(config.serverUrl);
   }
 
@@ -113,22 +140,44 @@ class SPA {
    * @param {Object} state
    */
   execute(path, state = null) {
+    if (typeof this.beforeRouteChange === 'function') {
+      this.beforeRouteChange(path, state);
+    }
+
     const route = this.get(path);
-    let params;
+    let params = {};
 
     if (route?.key instanceof RegExp) {
-      params = route.key.exec(window.location.pathname);
+      const match = route.key.exec(path);
+      if (match) {
+        params = match.groups || match.slice(1);
+      }
+    } else {
+      const queryString = window.location.search;
+      const searchParams = new URLSearchParams(queryString);
+      params = Object.fromEntries(searchParams.entries());
+    }
 
-      if (params?.groups && Object.keys(params?.groups).length > 0) {
-        params = params.groups;
-      } else {
-        params = Array.from(params);
-        params?.shift();
+    //  Route guard
+    if (this.routeGuards[route.key]) {
+      const allow = this.routeGuards[route.key](state);
+      if (!allow) {
+        console.warn(`🚫 Access denied to: ${path}`);
+        return;
       }
     }
 
-    // ✅ Pass socket, params, and state to the callback
     route?.callback(this.socket, params, this.context.root, state);
+  }
+
+  /**
+   * Redirect route
+   *
+   * @param {string} path
+   */
+  redirect(path) {
+    history.pushState({}, '', path);
+    this.execute(path);
   }
 
   /**
@@ -143,14 +192,56 @@ class SPA {
     };
   }
 
+  /**
+   * Enable state updates from the master server
+   */
   enableStateUpdates() {
     this.shouldIgnoreState = false;
   }
 
+  /**
+   * Disable state updates from the master server
+   */
   disableStateUpdates() {
     this.shouldIgnoreState = true;
   }
 
+  /**
+   * Set route guard
+   *
+   * @param {string|RegExp} path
+   * @param {Function} callback
+   */
+  setRouteGuard(path, callback) {
+    this.routeGuards[path] = callback;
+  }
+
+  /**
+   * Set before route change hook
+   *
+   * @param {Function} callback
+   */
+  setBeforeRouteChange(callback) {
+    this.beforeRouteChange = callback;
+  }
+
+  /**
+   * Set state change hook
+   *
+   * @param {Function} callback
+   */
+  setOnStateChange(callback) {
+    this.onStateChange = callback;
+  }
+
+  /**
+   * Set disconnect hook
+   *
+   * @param {Function} callback
+   */
+  setOnDisconnect(callback) {
+    this.onDisconnect = callback;
+  }
 
   /**
    * Handle routing events
@@ -179,7 +270,7 @@ class SPA {
 
                   if (targetUrl.hash) {
                     const focusElem = document.querySelector(targetUrl.hash);
-                    focusElem &&
+                    if (focusElem) {
                       setTimeout(() => {
                         focusElem.scrollIntoView({
                           behavior: 'smooth',
@@ -187,6 +278,7 @@ class SPA {
                           inline: 'nearest',
                         });
                       }, 500);
+                    }
                   }
                 }
               } catch (err) {

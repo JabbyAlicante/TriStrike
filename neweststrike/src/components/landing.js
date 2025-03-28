@@ -5,7 +5,7 @@ import '../components/sparkleCursor';
 
 
 
-export default function LandingPage(root) {
+export default function LandingPage({ root, socket }) {
 //   const component = document.createElement('h1');
   root.innerHTML = `
     <div class="landing-container" id="landing-id">
@@ -80,7 +80,12 @@ export default function LandingPage(root) {
   `;
   const playButton = root.querySelector(".play-start");
   playButton.addEventListener("click", () => {
-    LogSignUpPage(root); 
+    if (root instanceof HTMLElement) {
+      LogSignUpPage(root, socket);
+    } else {
+      console.error("❌ root is not a valid DOM element in LandingPage");
+    }
   });
 
 }
+
