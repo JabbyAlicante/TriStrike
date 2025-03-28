@@ -8,7 +8,7 @@ const HomePage = class {
     this.socket = socket;
     this.cardCount = cardCount; 
 
-
+    
     this.cardFaces = [
       { number: 0, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/0_t5bmuh.png' },
       { number: 1, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992368/1_swhmis.png' },
@@ -24,15 +24,17 @@ const HomePage = class {
       { number: 11, url: 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741992369/11_zxjz82.png' }
     ];
 
-   
+    
     this.allCardFaces = [
       ...this.cardFaces,
       ...this.cardFaces.slice(0, this.cardCount - this.cardFaces.length)
     ];
 
+    
     this.flippedCards = [];
     this.matchedCards = [];
     this.cards = [];
+    this.betPlaced = false; 
 
     this.verifyToken();
     this.render();
@@ -46,7 +48,7 @@ const HomePage = class {
       console.error("❌ No authentication token found. Redirecting to login...");
       window.location.href = "/login";
     } else {
-      console.log("Token verified:", token);
+      console.log("🔑 Token verified:", token);
     }
   }
 
@@ -83,7 +85,6 @@ const HomePage = class {
     // }
     // shuffleCards(allCardFaces);
 
-    
     const cardsHTML = Array.from({ length: this.cardCount }, (_, index) => {
       const card = allCardFaces[index % allCardFaces.length];
       return `
@@ -96,123 +97,6 @@ const HomePage = class {
       `;
     }).join('');
     return cardsHTML;
-  }
-
-  handleGameUpdate(response) {
-    
-    if (typeof response.prizePool !== "undefined") {
-      console.log(`🏆 Prize pool update received: ${response.prizePool}`);
-      const prizePoolElement = this.root.querySelector(".prize-pool .prize");
-      if (prizePoolElement) {
-        prizePoolElement.textContent = `${response.prizePool} coins`;
-      } else {
-        console.error("❌ Prize pool element not found in the DOM");
-      }
-    } else {
-      console.error("⚠️ Prize pool update failed: Invalid response structure");
-    }
-
-    
-    if (typeof response.timer !== "undefined") {
-      setTimeout(() => {
-        const timerElement = this.root.querySelector("#timer");
-        if (!timerElement) {
-          console.error("❌ Timer element not found in the DOM");
-          return;
-        }
-        const minutes = Math.floor(response.timer / 60);
-        const seconds = response.timer % 60;
-        timerElement.textContent = `Next draw in: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-      }, 100);
-    } else {
-      console.error("⚠️ Timer update failed: Invalid response structure");
-    }
-
-    
-    if (response.winningNumber) {
-      console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
-      const winningDigits = String(response.winningNumber).split('-').map(Number);
-      const headerCards = this.root.querySelector('.header .logo .cards');
-      if (headerCards) {
-        headerCards.innerHTML = '';
-        winningDigits.forEach((digit) => {
-          
-          const matchingCard = this.cardFaces.find((card) => card.number === digit);
-          if (matchingCard) {
-            const img = document.createElement('img');
-            
-            img.src = 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png';
-            img.alt = `Card ${digit}`;
-            img.setAttribute('data-card-number', digit);
-            headerCards.appendChild(img);
-          }
-        });
-      } else {
-        console.error("❌ Winner display area not found in the DOM");
-      }
-
-      
-      const chosenNumbers = [];
-      if (this.cards && this.cards.length > 0) {
-        this.cards.forEach((card) => {
-          card.addEventListener('click', () => {
-            if (this.flippedCards.length < 3 && !this.flippedCards.includes(card)) {
-              card.classList.add('flip');
-              this.flippedCards.push(card);
-              const chosenNumber = parseInt(card.getAttribute('data-card-number'), 10);
-              console.log(`🃏 Card flipped: ${chosenNumber}`);
-              if (!chosenNumbers.includes(chosenNumber)) {
-                chosenNumbers.push(chosenNumber);
-              }
-              if (chosenNumbers.length === 3) {
-                const betBtn = this.root.querySelector('#place-bet-btn');
-                if (betBtn) {
-                  betBtn.disabled = false;
-                }
-              }
-              if (winningDigits.includes(chosenNumber)) {
-                const headerCard = headerCards.querySelector(`[data-card-number="${chosenNumber}"]`);
-                if (headerCard) {
-                  const matchingFace = this.cardFaces.find((card) => card.number === chosenNumber);
-                  headerCard.src = matchingFace.url;
-                  console.log(`🎯 Correct match! Showing card ${chosenNumber}`);
-                  if (!this.matchedCards.includes(chosenNumber)) {
-                    this.matchedCards.push(chosenNumber);
-                  }
-                }
-              }
-            }
-            if (this.flippedCards.length === 3) {
-              setTimeout(() => {
-                this.flippedCards.forEach((card) => {
-                  const cardNumber = parseInt(card.getAttribute('data-card-number'), 10);
-                  if (!this.matchedCards.includes(cardNumber)) {
-                    card.classList.remove('flip');
-                  }
-                });
-                this.flippedCards = [];
-              }, 1000);
-            }
-          });
-        });
-      }
-    } else {
-      console.error("⚠️ Winning Number update failed");
-    }
-
-    
-    if (response.gameId) {
-      sessionStorage.setItem('gameId', response.gameId);
-    } else {
-      console.error("❌ No gameId received!");
-    }
-  }
-
-  updateBalance(balance) {
-    const moneyEl = this.root.querySelector("#money");
-    if (moneyEl) {
-      moneyEl.textContent = `Balance: ${balance} coins`;
-    }
   }
 
   render() {
@@ -263,7 +147,7 @@ const HomePage = class {
 
   
   setupUIEventListeners() {
-    
+   
     const logoElem = this.root.querySelector(".logo");
     if (logoElem) {
       logoElem.addEventListener("click", () => {
@@ -271,7 +155,6 @@ const HomePage = class {
         window.location.href = "/landing";
       });
     }
-   
     const logoutEl = this.root.querySelector("#logout");
     if (logoutEl) {
       logoutEl.addEventListener("click", () => {
@@ -280,7 +163,6 @@ const HomePage = class {
         window.location.href = "/login";
       });
     }
-    
     const coinstoreEl = this.root.querySelector("#coinstore");
     if (coinstoreEl) {
       coinstoreEl.addEventListener("click", () => {
@@ -288,9 +170,207 @@ const HomePage = class {
         // Coinstore open
       });
     }
+
+   
+    const placeBetButton = this.root.querySelector("#place-bet-btn");
+    
+    placeBetButton.addEventListener("click", () => {
+      if (this.betPlaced) {
+        console.error("❌ Bet already placed!");
+        alert("You have already placed a bet for this round.");
+        return;
+      }
+      if (this.flippedCards.length !== 3) {
+        console.error("❌ You must select exactly 3 cards to place a bet.");
+        alert("You must select exactly 3 cards to place a bet.");
+        return;
+      }
+
+      
+      const chosenNumbers = this.flippedCards.map(card =>
+        parseInt(card.getAttribute("data-card-number"), 10)
+      );
+
+      const betAmount = 20;
+      const gameId = sessionStorage.getItem("gameId");
+      if (!gameId) {
+        console.error("❌ No active game found.");
+        alert("No active game found. Please start a new game.");
+        return;
+      }
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        console.error("❌ User not authenticated.");
+        alert("Please log in to place a bet.");
+        return;
+      }
+
+      console.log(
+        `🎯 Placing bet with numbers: ${chosenNumbers.join(", ")}, Amount: ${betAmount}, Game Id: ${gameId}`
+      );
+
+     
+      this.socket.emit("place-bet", { gameId, chosenNumbers, betAmount, token });
+      this.betPlaced = true;
+      placeBetButton.disabled = true;
+
+      
+      this.socket.on("bet_success", (response) => {
+        console.log("✅ Bet successful!", response);
+        const updatedUserBal = response.balance;
+        localStorage.setItem("userBalance", updatedUserBal);
+        sessionStorage.setItem("updatedUserBal", updatedUserBal);
+        const balanceElement = this.root.querySelector("#money");
+        balanceElement.textContent = `Balance: ${updatedUserBal} coins`;
+        alert("✅ Bet successful! :D");
+
+        
+        if (token) {
+          this.socket.emit("get-balance", { token });
+        }
+        this.resetCards();
+      });
+      this.socket.on("bet_failed", (response) => {
+        console.error(`❌ Bet failed: ${response.message}`);
+        alert(`❌ Bet failed: ${response.message}`);
+        this.betPlaced = false;
+        placeBetButton.disabled = false;
+      });
+    });
   }
 
+  handleGameUpdate(response) {
+    if (typeof response.prizePool !== "undefined") {
+        console.log(`🏆 Prize pool update received: ${response.prizePool}`);
+        const prizePoolElement = this.root.querySelector(".prize-pool .prize");
+        if (prizePoolElement) {
+          prizePoolElement.textContent = `${response.prizePool} coins`;
+        } else {
+          console.error("❌ Prize pool element not found in the DOM");
+        }
+      } else {
+        console.error("⚠️ Prize pool update failed: Invalid response structure");
+      }
   
+      
+      if (typeof response.timer !== "undefined") {
+        setTimeout(() => {
+          const timerElement = this.root.querySelector("#timer");
+          if (!timerElement) {
+            console.error("❌ Timer element not found in the DOM");
+            return;
+          }
+          const minutes = Math.floor(response.timer / 60);
+          const seconds = response.timer % 60;
+          timerElement.textContent = `Next draw in: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }, 100);
+      } else {
+        console.error("⚠️ Timer update failed: Invalid response structure");
+      }
+  
+      
+      if (response.winningNumber) {
+        console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
+        const winningDigits = String(response.winningNumber).split('-').map(Number);
+        const headerCards = this.root.querySelector('.header .logo .cards');
+        if (headerCards) {
+          headerCards.innerHTML = '';
+          winningDigits.forEach((digit) => {
+            
+            const matchingCard = this.cardFaces.find((card) => card.number === digit);
+            if (matchingCard) {
+              const img = document.createElement('img');
+              
+              img.src = 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png';
+              img.alt = `Card ${digit}`;
+              img.setAttribute('data-card-number', digit);
+              headerCards.appendChild(img);
+            }
+          });
+        } else {
+          console.error("❌ Winner display area not found in the DOM");
+        }
+  
+        
+        const chosenNumbers = [];
+        if (this.cards && this.cards.length > 0) {
+          this.cards.forEach((card) => {
+            card.addEventListener('click', () => {
+              if (this.flippedCards.length < 3 && !this.flippedCards.includes(card)) {
+                card.classList.add('flip');
+                this.flippedCards.push(card);
+                const chosenNumber = parseInt(card.getAttribute('data-card-number'), 10);
+                console.log(`🃏 Card flipped: ${chosenNumber}`);
+                if (!chosenNumbers.includes(chosenNumber)) {
+                  chosenNumbers.push(chosenNumber);
+                }
+                if (chosenNumbers.length === 3) {
+                  const betBtn = this.root.querySelector('#place-bet-btn');
+                  if (betBtn) {
+                    betBtn.disabled = false;
+                  }
+                }
+                if (winningDigits.includes(chosenNumber)) {
+                  const headerCard = headerCards.querySelector(`[data-card-number="${chosenNumber}"]`);
+                  if (headerCard) {
+                    const matchingFace = this.cardFaces.find((card) => card.number === chosenNumber);
+                    headerCard.src = matchingFace.url;
+                    console.log(`🎯 Correct match! Showing card ${chosenNumber}`);
+                    if (!this.matchedCards.includes(chosenNumber)) {
+                      this.matchedCards.push(chosenNumber);
+                    }
+                  }
+                }
+              }
+              if (this.flippedCards.length === 3) {
+                setTimeout(() => {
+                  this.flippedCards.forEach((card) => {
+                    const cardNumber = parseInt(card.getAttribute('data-card-number'), 10);
+                    if (!this.matchedCards.includes(cardNumber)) {
+                      card.classList.remove('flip');
+                    }
+                  });
+                  this.flippedCards = [];
+                }, 1000);
+              }
+            });
+          });
+        }
+      } else {
+        console.error("⚠️ Winning Number update failed");
+      }
+  
+      
+      if (response.gameId) {
+        sessionStorage.setItem('gameId', response.gameId);
+      } else {
+        console.error("❌ No gameId received!");
+      }
+  }
+
+  updateBalance(balance) {
+    const moneyEl = this.root.querySelector("#money");
+    if (moneyEl) {
+      moneyEl.textContent = `Balance: ${balance} coins`;
+    }
+  }
+
+  resetCards() {
+    setTimeout(() => {
+      this.flippedCards.forEach(card => {
+        const cardNumber = parseInt(card.getAttribute("data-card-number"), 10);
+        if (!this.matchedCards.includes(cardNumber)) {
+          card.classList.remove("flip");
+        }
+      });
+      this.flippedCards = [];
+      this.betPlaced = false;
+      const placeBetButton = this.root.querySelector("#place-bet-btn");
+      if (placeBetButton) {
+        placeBetButton.disabled = false;
+      }
+    }, 500);
+  }
 };
 
 export default HomePage;
