@@ -115,5 +115,27 @@ export default class LoginPage {
       }
     });
   }
+
+  verifyToken() {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      console.log("🔑 Token detected:", token);
+      
+    } else {
+      console.log("No token found. User may need to log in.");
+    }
+  }
+
+  showAlert(message) {
+    const alertText = this.root.querySelector("#alertText");
+    const alertMessage = this.root.querySelector("#alertMessage");
+    if (alertText && alertMessage) {
+      alertText.textContent = message;
+      alertMessage.style.display = "block";
+    } else {
+      console.error("Alert elements not found in the DOM.");
+    }
+  }
+
 }
 
