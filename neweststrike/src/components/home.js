@@ -147,29 +147,6 @@ const HomePage = class {
 
   
   setupUIEventListeners() {
-   
-    const logoElem = this.root.querySelector(".logo");
-    if (logoElem) {
-      logoElem.addEventListener("click", () => {
-        console.log("🏠 Redirecting to Landing Page...");
-        window.location.href = "/landing";
-      });
-    }
-    const logoutEl = this.root.querySelector("#logout");
-    if (logoutEl) {
-      logoutEl.addEventListener("click", () => {
-        console.log("Logging out...");
-        localStorage.removeItem("authToken");
-        window.location.href = "/login";
-      });
-    }
-    const coinstoreEl = this.root.querySelector("#coinstore");
-    if (coinstoreEl) {
-      coinstoreEl.addEventListener("click", () => {
-        console.log("Opening coin store...");
-        // Coinstore open
-      });
-    }
 
    
     const placeBetButton = this.root.querySelector("#place-bet-btn");
@@ -237,6 +214,43 @@ const HomePage = class {
         placeBetButton.disabled = false;
       });
     });
+
+    setTimeout(() => {
+        const userProfile = this.root.querySelector('.user-profile');
+        const dropdown = this.root.querySelector('.dropdown');
+        const logoutButton = this.root.querySelector('#logout');
+        const coinButton = this.root.querySelector('#coinstore');
+        // const historyButton = root.querySelector('#history');
+
+        if (userProfile && dropdown) {
+            userProfile.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', () => {
+                dropdown.classList.remove('show');
+            });
+        }
+
+        if (logoutButton) {
+            logoutButton.addEventListener('click', () => {
+                console.log('🚪 Logging out...');
+                localStorage.removeItem('authToken');
+                window.location.href = '/';
+            });
+        }
+
+        if (coinButton) {
+            coinButton.addEventListener('click', () => {
+                console.log('Redirecting to dashboard...');
+                // window.location.href = '/store';
+                store(root);
+            });
+        }
+
+
+    }, 0);
   }
 
   handleGameUpdate(response) {
