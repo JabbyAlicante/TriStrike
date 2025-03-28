@@ -2,8 +2,6 @@ import db from "../config/db.js";
 import { deductBalance, addPrizeToWinner } from "./balanceService.js";
 import { getTotalPrizePool } from "./prizeService.js";
 
-const WIN_MULTIPLIER = 5;
-
 export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
     try {
         if (!user?.id) throw new Error("UNAUTHORIZED");
@@ -32,7 +30,7 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
         }
 
         const [[game]] = await db.query(
-            `SELECT id, winning_num FROM games WHERE id = ? AND status = 'ongoing'`,
+            `SELECT id, winning_num, prize_pool FROM games WHERE id = ? AND status = 'ongoing'`,
             [gameId]
         );
 
@@ -44,6 +42,8 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
                 message: "Invalid or finished game!"
             });
         }
+
+        const prizePool = game.prize_pool;
 
         const newBalance = await deductBalance(userId, betAmount);
         console.log(`💰 Balance deducted. New balance for User ${userId}: ${newBalance}`);
@@ -63,10 +63,16 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
         );
 
         if (isWinningBet) {
-            const rewardAmount = betAmount * WIN_MULTIPLIER;
+
+            const rewardAmount = prizePool;
             const updatedBalance = await addPrizeToWinner(userId, rewardAmount);
 
             console.log(`🏆 Bet WON! Reward: ${rewardAmount} coins`);
+
+            await db.query(
+                `UPDATE games SET prize_pool = 80 WHERE id = ?`,
+                [gameId]
+            );
 
             socket.emit("bet_success", {
                 success: true,

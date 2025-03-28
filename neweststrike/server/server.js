@@ -11,7 +11,6 @@ import dotenv from 'dotenv';
 import { signupUser, loginUser, verifyToken } from './services/userService.js';
 import { startGameService, getGameState } from './services/gameService.js';
 import { placeBet } from './services/betsService.js';
-import { distributePrizePool } from './services/prizeService.js';
 import { strikeStore } from './services/store.js';
 import { getBalance } from './services/balanceService.js';
 
@@ -147,16 +146,20 @@ async function createCustomServer() {
       if (!isHost) {
         console.log('Forwarding user balance request to master');
         masterSocket.emit('user-balance', data);
-
-        masterSocket.once('balance-response', (response) =>{
+    
+        masterSocket.once('balance-response', (response) => {
           console.log('⬅️ Received balance response from master');
           socket.emit('balance-response', response);
-
           io.emit('balance-update', { balance: response.balance });
         });
         return;
       }
+    
+      const balance = await getBalance(data.userId);
+      socket.emit('balance-response', { balance });
+      io.emit('balance-update', { balance });
     });
+    
 
     // ---------------------- PLACE BET ----------------------
     socket.on('place-bet', async (data) => {
@@ -178,21 +181,6 @@ async function createCustomServer() {
       }
 
       await placeBet(socket, gameId, chosenNumbers, betAmount, user);
-    });
-
-    // ---------------------- END GAME ----------------------
-    socket.on('game_end', async (gameId) => {
-      if (!isHost) {
-        console.log('🔀 Forwarding game_end request to master');
-        masterSocket.emit('game_end', gameId);
-
-        masterSocket.once('game_ended', (response) => {
-          socket.emit('game_ended', response);
-        });
-        return;
-      }
-
-      await distributePrizePool(gameId);
     });
 
     // ---------------------- BUY COINS ----------------------

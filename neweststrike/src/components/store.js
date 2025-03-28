@@ -1,10 +1,6 @@
 import '../styles/store.css';
-// import webSocketService from '../core/websocketClient';
+
 import HomePage from './home'
-
-
-
-    
 
 export default function store(root) {
 

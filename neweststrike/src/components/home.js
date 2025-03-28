@@ -199,11 +199,19 @@ const HomePage = class {
     
       this.socket.on("bet_success", (response) => {
         console.log("✅ Bet successful!", response);
+
         const updatedUserBal = response.balance;
         localStorage.setItem("userBalance", updatedUserBal);
         sessionStorage.setItem("updatedUserBal", updatedUserBal);
         this.updateBalance(updatedUserBal);
-        alert("✅ Bet successful!");
+
+        if (response.win) {
+          alert(`🎉 Congratulations! You won ${response.prize} coins!\nNew balance: ${updatedUserBal}`);
+          console.log(`🏆 You won ${response.prize} coins!`);
+        } else {
+          alert(`💔 Better luck next time!\nNew balance: ${updatedUserBal}`);
+          console.log(`💔 You lost the bet.`);
+    }
     
         if (token) {
           this.socket.emit("get-balance", { token });

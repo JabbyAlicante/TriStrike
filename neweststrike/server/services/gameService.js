@@ -1,5 +1,4 @@
 import db from "../config/db.js";
-import { distributePrizePool } from "./prizeService.js";
 
 const isHost = process.env.PORT ? process.env.PORT === "3000" : true;
 let slaveSockets = [];
@@ -109,7 +108,6 @@ async function createNewGame(io) {
             console.log(`🏁 Ending Game ${gameState.gameId}...`);
             console.log("🧪 gameId type:", typeof gameState.gameId, gameState.gameId);
 
-            await distributePrizePool(io,gameState.gameId);
         }
 
         gameState.timer = 59;

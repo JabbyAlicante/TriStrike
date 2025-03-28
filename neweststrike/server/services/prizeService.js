@@ -62,113 +62,113 @@ export async function getTotalPrizePool(io, gameId) {
 }
 
 
-export async function distributePrizePool(io, gameId) {
-    if (!gameId) {
-        io.emit("prize_distribution", {
-            success: false,
-            message: "Game ID is required",
-            data: null
-        });
-        return;
-    }
+// export async function distributePrizePool(io, gameId) {
+//     if (!gameId) {
+//         io.emit("prize_distribution", {
+//             success: false,
+//             message: "Game ID is required",
+//             data: null
+//         });
+//         return;
+//     }
 
-    console.log(`🔍 Checking for winners in Game ${gameId}`);
-    io.emit("prize_distribution", {
-        success: true,
-        message: `Checking for winners in Game ${gameId}...`
-    });
+//     console.log(`🔍 Checking for winners in Game ${gameId}`);
+//     io.emit("prize_distribution", {
+//         success: true,
+//         message: `Checking for winners in Game ${gameId}...`
+//     });
 
-    try {
-        await db.query(
-            `UPDATE bets b
-             JOIN games g ON b.game_id = g.id
-             SET b.is_winner = 1
-             WHERE b.game_id = ?
-             AND JSON_CONTAINS(
-                 CAST(CONCAT('[', REPLACE(g.winning_num, '-', ','), ']') AS JSON),
-                 CAST(CONCAT('[', REPLACE(b.chosen_nums, '-', ','), ']') AS JSON)
-             )`,
-            [gameId]
-        );
+//     try {
+//         await db.query(
+//             `UPDATE bets b
+//              JOIN games g ON b.game_id = g.id
+//              SET b.is_winner = 1
+//              WHERE b.game_id = ?
+//              AND JSON_CONTAINS(
+//                  CAST(CONCAT('[', REPLACE(g.winning_num, '-', ','), ']') AS JSON),
+//                  CAST(CONCAT('[', REPLACE(b.chosen_nums, '-', ','), ']') AS JSON)
+//              )`,
+//             [gameId]
+//         );
 
-        const [prizeResult] = await db.query(
-            `SELECT SUM(amount) AS totalPrizePool FROM bets WHERE game_id = ?`,
-            [gameId]
-        );
+//         const [prizeResult] = await db.query(
+//             `SELECT SUM(amount) AS totalPrizePool FROM bets WHERE game_id = ?`,
+//             [gameId]
+//         );
 
-        const totalPrizePool = prizeResult[0]?.totalPrizePool || 0;
+//         const totalPrizePool = prizeResult[0]?.totalPrizePool || 0;
 
-        if (totalPrizePool === 0) {
-            console.log(`⚠️ No prize pool available for Game ${gameId}`);
-            io.emit("prize_distribution", {
-                success: false,
-                message: `No prize pool available for Game ${gameId}`,
-                data: null
-            });
-            return;
-        }
+//         if (totalPrizePool === 0) {
+//             console.log(`⚠️ No prize pool available for Game ${gameId}`);
+//             io.emit("prize_distribution", {
+//                 success: false,
+//                 message: `No prize pool available for Game ${gameId}`,
+//                 data: null
+//             });
+//             return;
+//         }
 
-        const [winners] = await db.query(
-            `SELECT user_id FROM bets WHERE game_id = ? AND is_winner = 1`,
-            [gameId]
-        );
+//         const [winners] = await db.query(
+//             `SELECT user_id FROM bets WHERE game_id = ? AND is_winner = 1`,
+//             [gameId]
+//         );
 
-        if (winners.length === 0) {
-            console.log(`🔄 No winners, carrying over prize to next round.`);
-            await storeCarryOverPrize(totalPrizePool, io);
-            return;
-        }
+//         if (winners.length === 0) {
+//             console.log(`🔄 No winners, carrying over prize to next round.`);
+//             await storeCarryOverPrize(totalPrizePool, io);
+//             return;
+//         }
 
-        const prizePerWinner = Math.floor(totalPrizePool / winners.length);
-        console.log(
-            `🏆 Splitting ${totalPrizePool} among ${winners.length} winners (Each gets ${prizePerWinner})`
-        );
+//         const prizePerWinner = Math.floor(totalPrizePool / winners.length);
+//         console.log(
+//             `🏆 Splitting ${totalPrizePool} among ${winners.length} winners (Each gets ${prizePerWinner})`
+//         );
 
-        const connection = await db.getConnection();
-        await connection.beginTransaction();
+//         const connection = await db.getConnection();
+//         await connection.beginTransaction();
 
-        try {
-            const winnerPromises = winners.map(({ user_id }) =>
-                addPrizeToWinner(io, user_id, prizePerWinner)
-            );
+//         try {
+//             const winnerPromises = winners.map(({ user_id }) =>
+//                 addPrizeToWinner(io, user_id, prizePerWinner)
+//             );
 
-            await Promise.all(winnerPromises);
+//             await Promise.all(winnerPromises);
 
-            await connection.commit();
+//             await connection.commit();
 
-            console.log(`✅ All winners paid for Game ${gameId}`);
-            io.emit("prize_distribution", {
-                success: true,
-                message: `Prizes distributed successfully!`,
-                data: {
-                    gameId,
-                    totalPrizePool,
-                    totalWinners: winners.length,
-                    prizePerWinner
-                }
-            });
+//             console.log(`✅ All winners paid for Game ${gameId}`);
+//             io.emit("prize_distribution", {
+//                 success: true,
+//                 message: `Prizes distributed successfully!`,
+//                 data: {
+//                     gameId,
+//                     totalPrizePool,
+//                     totalWinners: winners.length,
+//                     prizePerWinner
+//                 }
+//             });
 
-            await updatePrizePoolInGame(gameId, 0);
-        } catch (err) {
-            await connection.rollback();
-            console.error("❌ Error distributing prizes:", err);
-            io.emit("prize_distribution", {
-                success: false,
-                message: "Error distributing prizes",
-                error: err.message
-            });
-        } finally {
-            connection.release();
-        }
-    } catch (err) {
-        console.error("❌ Error in prize distribution:", err);
-        io.emit("prize_distribution", {
-            success: false,
-            message: "Error processing prize pool",
-            error: err.message
-        });
-    }
-}
+//             await updatePrizePoolInGame(gameId, 0);
+//         } catch (err) {
+//             await connection.rollback();
+//             console.error("❌ Error distributing prizes:", err);
+//             io.emit("prize_distribution", {
+//                 success: false,
+//                 message: "Error distributing prizes",
+//                 error: err.message
+//             });
+//         } finally {
+//             connection.release();
+//         }
+//     } catch (err) {
+//         console.error("❌ Error in prize distribution:", err);
+//         io.emit("prize_distribution", {
+//             success: false,
+//             message: "Error processing prize pool",
+//             error: err.message
+//         });
+//     }
+// }
 
 export async function updatePrizePoolInGame(gameId, prizePool) {
     try {
@@ -184,41 +184,41 @@ export async function updatePrizePoolInGame(gameId, prizePool) {
     }
 }
 
-export async function storeCarryOverPrize(amount, io) {
-    try {
-        const [result] = await db.query(
-            `SELECT id FROM games ORDER BY created_at DESC LIMIT 1`
-        );
+// export async function storeCarryOverPrize(amount, io) {
+//     try {
+//         const [result] = await db.query(
+//             `SELECT id FROM games ORDER BY created_at DESC LIMIT 1`
+//         );
 
-        if (result.length === 0) {
-            throw new Error("No active game found for carryover");
-        }
+//         if (result.length === 0) {
+//             throw new Error("No active game found for carryover");
+//         }
 
-        const latestGameId = result[0].id;
+//         const latestGameId = result[0].id;
 
-        await db.query(
-            `UPDATE games SET prize_pool = prize_pool + ? WHERE id = ?`,
-            [amount, latestGameId]
-        );
+//         await db.query(
+//             `UPDATE games SET prize_pool = prize_pool + ? WHERE id = ?`,
+//             [amount, latestGameId]
+//         );
 
-        console.log(
-            `🔄 Carry-over prize added! New Prize Pool for Game ${latestGameId}: +${amount}`
-        );
+//         console.log(
+//             `🔄 Carry-over prize added! New Prize Pool for Game ${latestGameId}: +${amount}`
+//         );
 
-        io.emit("prize_distribution", {
-            success: true,
-            message: `Carry-over prize added to Game ${latestGameId}`,
-            data: {
-                gameId: latestGameId,
-                carryOverAmount: amount
-            }
-        });
-    } catch (err) {
-        console.error("❌ Error updating carry-over prize pool:", err);
-        io.emit("prize_distribution", {
-            success: false,
-            message: "Error carrying over prize",
-            error: err.message
-        });
-    }
-}
+//         io.emit("prize_distribution", {
+//             success: true,
+//             message: `Carry-over prize added to Game ${latestGameId}`,
+//             data: {
+//                 gameId: latestGameId,
+//                 carryOverAmount: amount
+//             }
+//         });
+//     } catch (err) {
+//         console.error("❌ Error updating carry-over prize pool:", err);
+//         io.emit("prize_distribution", {
+//             success: false,
+//             message: "Error carrying over prize",
+//             error: err.message
+//         });
+//     }
+// }

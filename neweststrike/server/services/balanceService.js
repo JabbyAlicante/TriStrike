@@ -1,4 +1,3 @@
-import { io, Socket } from "socket.io-client";
 import db from "../config/db.js";
 
 export async function getUserBalance(userId, socket) {
