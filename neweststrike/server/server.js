@@ -10,7 +10,6 @@ import dotenv from 'dotenv';
 
 import { signupUser, loginUser, verifyToken } from './services/userService.js';
 import { startGameService, getGameState } from './services/gameService.js';
-import { getUserBalance, deductBalance, addPrizeToWinner } from './services/balanceService.js';
 import { placeBet } from './services/betsService.js';
 import { distributePrizePool } from './services/prizeService.js';
 import { strikeStore } from './services/store.js';
@@ -31,6 +30,7 @@ async function createCustomServer() {
 
   let vite;
   let masterSocket = null;
+  let stateSocket = null;
 
   if (IS_PRODUCTION) {
     app.use(express.static(path.resolve(__dirname, './dist/client/')));
@@ -61,21 +61,45 @@ async function createCustomServer() {
       try {
         startGameService(io);
         console.log('✅ Master game service started successfully.');
+
+        setInterval(() => {
+          const gameState = getGameState();
+          io.emit('state_update', gameState);
+        }, 1000);
+
       } catch (err) {
         console.error('❌ Error starting game service:', err);
       }
     } else {
-      // If it's a slave, connect to the master
+      //  Socket for client events
       masterSocket = Client(`http://localhost:${HOST_PORT}`, {
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'], 
       });
 
       masterSocket.on('connect', () => {
-        console.log('✅ Connected to master server');
+        console.log('✅ Connected to master server (WebSocket)');
       });
 
       masterSocket.on('disconnect', () => {
         console.log('❌ Disconnected from master server');
+      });
+
+      //  Dedicated socket for polling state updates
+      stateSocket = Client(`http://localhost:${HOST_PORT}`, {
+        transports: ['polling'],
+      });
+
+      stateSocket.on('connect', () => {
+        console.log('✅ Connected to master server for polling');
+      });
+
+      stateSocket.on('state_update', (state) => {
+        console.log('🔄 State update received from master:', state);
+        io.emit('state_update', state);
+      });
+
+      stateSocket.on('disconnect', () => {
+        console.log('❌ Disconnected from master (polling)');
       });
     }
   });
@@ -107,7 +131,6 @@ async function createCustomServer() {
         console.log('🔀 Forwarding log-in request to master');
         masterSocket.emit('log-in', data);
 
-        // Listen for response from master
         masterSocket.once('login-response', (response) => {
           socket.emit('login-response', response);
         });
@@ -124,7 +147,6 @@ async function createCustomServer() {
         console.log('🔀 Forwarding place-bet request to master');
         masterSocket.emit('place-bet', data);
 
-        // Listen for response from master
         masterSocket.once('bet-result', (response) => {
           socket.emit('bet-result', response);
         });
@@ -132,12 +154,6 @@ async function createCustomServer() {
       }
 
       const { token, gameId, chosenNumbers, betAmount } = data;
-
-      if (!token) {
-        socket.emit('bet-result', { success: false, message: 'Token is missing.' });
-        return;
-      }
-
       const { success, user } = await verifyToken(token);
       if (!success) {
         socket.emit('bet-result', { success: false, message: 'Invalid token.' });
@@ -153,7 +169,6 @@ async function createCustomServer() {
         console.log('🔀 Forwarding game_end request to master');
         masterSocket.emit('game_end', gameId);
 
-        // Listen for response from master
         masterSocket.once('game_ended', (response) => {
           socket.emit('game_ended', response);
         });
@@ -169,7 +184,6 @@ async function createCustomServer() {
         console.log('🔀 Forwarding buy_coins request to master');
         masterSocket.emit('buy_coins', data);
 
-        // Listen for response from master
         masterSocket.once('strike_store_response', (response) => {
           socket.emit('strike_store_response', response);
         });
@@ -183,14 +197,6 @@ async function createCustomServer() {
     socket.on('disconnect', () => {
       console.log(`❌ User disconnected: ${socket.id}`);
     });
-
-    // ---------------------- STATE UPDATE ----------------------
-    if (!isHost) {
-      masterSocket.on('state_update', (state) => {
-        console.log('🔄 State update received from master:', state);
-        io.emit('state_update', state);
-      });
-    }
   });
 }
 
