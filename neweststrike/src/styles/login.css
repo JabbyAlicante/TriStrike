@@ -73,21 +73,29 @@ form {
 .alert {
     display: none;
     position: fixed;
-    font-family: 'Chivo', sans-serif; 
+    /* font-family: 'Chivo', sans-serif;  */
+    font-family: 'Marcellus SC', serif;
+    font-size: 45px;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #FFF8ED;
-    color: #000000;
+    background-color: #281858;
+    /* color: #CEA63A; */
     padding: 20px;
     border-radius: 8px;
-    border: 1px solid #FF6E1F;
+    border: 1px solid #0A0614;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     text-align: center;
-    width: 300px;
-    height: 130px;
+    width: 500px;
+    height: 250px;
     align-content: center;
+}
+
+.alert p {
+    font-size: 45px;
+    color: #CEA63A;
+    filter: drop-shadow(0px 0px 5px #FFCF6B);
 }
 
 
