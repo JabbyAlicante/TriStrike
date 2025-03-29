@@ -30,6 +30,8 @@ const HomePage = class {
       ...this.cardFaces.slice(0, this.cardCount - this.cardFaces.length)
     ];
 
+    this.shuffleCards(this.allCardFaces);
+
     
     this.flippedCards = [];
     this.matchedCards = [];
@@ -76,19 +78,20 @@ const HomePage = class {
     });
   }
 
+  shuffleCards(cards) {
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+  }
 
   generateCardsHTML() {
    
     let allCardFaces = [...this.allCardFaces];
 
    
-    // function shuffleCards(cards) {
-    //   for (let i = cards.length - 1; i > 0; i--) {
-    //     const j = Math.floor(Math.random() * (i + 1));
-    //     [cards[i], cards[j]] = [cards[j], cards[i]];
-    //   }
-    // }
-    // shuffleCards(allCardFaces);
+    
+    this.shuffleCards(this.allCardFaces);
 
     const cardsHTML = Array.from({ length: this.cardCount }, (_, index) => {
       const card = allCardFaces[index % allCardFaces.length];
@@ -101,12 +104,14 @@ const HomePage = class {
         </div>
       `;
     }).join('');
+    // this.shuffleCards(this.allCardFaces);
     return cardsHTML;
   }
 
   render() {
     const storedBalance = localStorage.getItem("userBalance") || 0;
     const cardsHTML = this.generateCardsHTML();
+    // this.shuffleCards(this.allCardFaces);
     this.root.innerHTML = `
       <div class="body">
         <header class="header">
@@ -135,7 +140,8 @@ const HomePage = class {
             ${cardsHTML}
           </div>
           <div id="alertMessage" class="alert">
-              <p id="alertText"></p>
+            <h1 id="alertTitle"></h1>
+            <p id="alertText"></p>
           </div>
         </section>
 
@@ -237,7 +243,7 @@ const HomePage = class {
         if (token) {
           this.socket.emit("get-balance", { token });
         }
-        this.resetCards();
+        // this.resetCards();
       });
     
       this.socket.on("bet_failed", (response) => {
@@ -288,6 +294,7 @@ const HomePage = class {
     }, 0);
   }
 
+
   
 
   handleGameUpdate(response) {
@@ -322,29 +329,30 @@ const HomePage = class {
   
       
       if (response.winningNumber) {
-        // console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
+        
         const winningDigits = String(response.winningNumber).split('-').map(Number);
         const headerCards = this.root.querySelector('.header .logo .cards');
+      
         if (headerCards) {
+         
           headerCards.innerHTML = '';
+         
           winningDigits.forEach((digit) => {
-            
             const matchingCard = this.cardFaces.find((card) => card.number === digit);
             if (matchingCard) {
               const img = document.createElement('img');
               
-              img.src = 'https://res.cloudinary.com/dkympjwqc/image/upload/v1741402544/back_kispbm.png';
+              img.src = matchingCard.url;
               img.alt = `Card ${digit}`;
               img.setAttribute('data-card-number', digit);
               headerCards.appendChild(img);
             }
           });
-        } 
-        // else {
-        //   console.error("❌ Winner display area not found in the DOM");
-        // }
-  
-        
+        } else {
+          console.error("❌ Winner display area not found in the DOM");
+        }
+      
+    
         const chosenNumbers = [];
         if (this.cards && this.cards.length > 0) {
           this.cards.forEach((card) => {
@@ -363,35 +371,48 @@ const HomePage = class {
                     betBtn.disabled = false;
                   }
                 }
+                
                 if (winningDigits.includes(chosenNumber)) {
-                  const headerCard = headerCards.querySelector(`[data-card-number="${chosenNumber}"]`);
-                  if (headerCard) {
-                    const matchingFace = this.cardFaces.find((card) => card.number === chosenNumber);
-                    headerCard.src = matchingFace.url;
-                    console.log(`🎯 Correct match! Showing card ${chosenNumber}`);
-                    if (!this.matchedCards.includes(chosenNumber)) {
-                      this.matchedCards.push(chosenNumber);
-                    }
+                  console.log(`🎯 Correct match for card ${chosenNumber} on gameboard`);
+                  if (!this.matchedCards.includes(chosenNumber)) {
+                    this.matchedCards.push(chosenNumber);
                   }
                 }
               }
               if (this.flippedCards.length === 3) {
                 setTimeout(() => {
                   this.flippedCards.forEach((card) => {
-                    const cardNumber = parseInt(card.getAttribute('data-card-number'), 10);
-                    if (!this.matchedCards.includes(cardNumber)) {
-                      card.classList.remove('flip');
-                    }
+                    
+                    card.classList.remove('flip');
                   });
                   this.flippedCards = [];
+                  this.shuffleCards(this.cards);
+
+                  const gameBoard = this.root.querySelector('.card-grid'); 
+                  if (gameBoard) {
+                      gameBoard.innerHTML = ''; 
+                      this.cards.forEach((card) => {
+                          gameBoard.appendChild(card);
+                      });
+                      console.log("🔄 Cards shuffled!");
+                  }
+
+                  // console.log("🔄 Cards shuffled!");
+
+                    
+
                 }, 1000);
               }
+
+              
             });
           });
         }
       } else {
         console.error("⚠️ Winning Number update failed");
       }
+    
+      
   
       
       if (response.gameId) {
@@ -402,35 +423,40 @@ const HomePage = class {
   }
 
   
+  
+  // resetCards() {
+  //   setTimeout(() => {
+  //     this.flippedCards.forEach(card => {
+  //       const cardNumber = parseInt(card.getAttribute("data-card-number"), 10);
+  //       if (!this.matchedCards.includes(cardNumber)) {
+  //         card.classList.remove("flip");
+  //       }
+  //     });
+  //     this.flippedCards = [];
+  //     this.betPlaced = false;
+  //     const placeBetButton = this.root.querySelector("#place-bet-btn");
+  //     if (placeBetButton) {
+  //       placeBetButton.disabled = false;
+  //     }
+  //   }, 500);
+  // }
 
-  resetCards() {
-    setTimeout(() => {
-      this.flippedCards.forEach(card => {
-        const cardNumber = parseInt(card.getAttribute("data-card-number"), 10);
-        if (!this.matchedCards.includes(cardNumber)) {
-          card.classList.remove("flip");
-        }
-      });
-      this.flippedCards = [];
-      this.betPlaced = false;
-      const placeBetButton = this.root.querySelector("#place-bet-btn");
-      if (placeBetButton) {
-        placeBetButton.disabled = false;
-      }
-    }, 500);
-  }
+  
 
   showAlert(message) {
     const alertText = this.root.querySelector("#alertText");
+    const alertTitle = this.root.querySelector("#alertTitle");
     const alertMessage = this.root.querySelector("#alertMessage");
-    if (alertText && alertMessage) {
-      alertText.textContent = message;
-      alertMessage.style.display = "block";
+    if (alertTitle && alertText && alertMessage) {
+        alertTitle.textContent = "";
+        alertText.textContent = message;
+        alertMessage.style.display = "block";
   
       
-      alertMessage.addEventListener("click", () => {
-        alertMessage.style.display = "none";
-      }, { once: true });
+        alertMessage.addEventListener("click", () => {
+            alertMessage.style.display = "none";
+    }, { once: true });
+    
     } else {
       console.error("Alert elements not found in the DOM.");
     }
