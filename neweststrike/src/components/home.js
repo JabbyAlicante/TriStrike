@@ -197,7 +197,7 @@ const HomePage = class {
     
       alert("✅ Bet placed successfully!");
     
-      this.socket.on("bet_success", (response) => {
+      this.socket.on("bet_result", (response) => {
         console.log("✅ Bet successful!", response);
 
         const updatedUserBal = response.balance;
