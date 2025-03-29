@@ -62,29 +62,39 @@ class SPA {
     
     this.socket.on('login-response', (response) => {
       console.log('🔐 Login response:', response);
-      if (response.success) {
-        alert('Login successful! Welcome back.');
-      } else {
-        alert(`Login failed: ${response.message}`);
-      }
+      // if (response.success) {
+      //   alert('Login successful! Welcome back.');
+      // } else {
+      //   alert(`Login failed: ${response.message}`);
+      // }
+    });
+
+    this.socket.on("connect", () => {
+      console.log("✅ Connected to the server");
     });
     
-    this.socket.on('bet-result', (response) => {
-      console.log('🎯 Bet response:', response);
+    // this.socket.on('bet_result', (response) => {
+    //   // console.log('🎯 Bet response:', response);
+    //   try {
+    //     console.log('🎯 Bet response:', response);
+    //   } catch (error) {
+    //     console.error('Error processing bet-result:', error);
+    //   }
+    
       
-      if (response.success) {
-        if (response.win) {
-          console.log(`🏆 You won! Prize: ${response.prize} coins`);
-          alert(`Congratulations! You won ${response.prize} coins!`);
-        } else {
-          console.log(`💔 Bet LOST. Better luck next time.`);
-          alert('Better luck next time!');
-        }
-      } else {
-        console.error(`⚠️ Bet failed: ${response.message}`);
-        alert(`Bet failed: ${response.message}`);
-      }
-    });
+      // if (response.success) {
+      //   if (response.win) {
+      //     console.log(`🏆 You won! Prize: ${response.prize} coins`);
+      //     alert(`Congratulations! You won ${response.prize} coins!`);
+      //   } else {
+      //     console.log(`💔 Bet LOST. Better luck next time.`);
+      //     alert('Better luck next time!');
+      //   }
+      // } else {
+      //   console.error(`⚠️ Bet failed: ${response.message}`);
+      //   alert(`Bet failed: ${response.message}`);
+      // }
+    // });
     
 
     // Handle state updates from master server
