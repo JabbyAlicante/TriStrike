@@ -103,7 +103,7 @@ export default class LoginPage {
           return;
         }
 
-        // Check server status before logging in
+        // ---------------------Check server status before logging in-------------------------
         const isServerOnline = await this.checkServerStatus();
         if (!isServerOnline) {
           this.showAlert("🚧 Server is under maintenance. Please try again later.");

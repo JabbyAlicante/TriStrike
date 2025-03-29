@@ -28,7 +28,7 @@ async function createCustomServer() {
   const server = createServer(app);
   const io = new Server(server, { cors: { origin: '*' } });
 
-  //checking 3000 status
+  //----------------checking 3000 status-----------------
   app.get('/health', (req, res) => {
     res.status(200).json({ status: 'online' });
   });

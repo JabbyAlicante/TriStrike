@@ -1,5 +1,4 @@
 import '../styles/dashboard.css';
-// import webSocketService from '../core/websocketClient';
 
 export default function DashboardPage(root) {
 
