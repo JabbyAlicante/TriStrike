@@ -153,6 +153,13 @@ const HomePage = class {
     this.cards = Array.from(this.root.querySelectorAll('.card'));
   }
 
+  updateBalance(balance) {
+    const moneyEl = this.root.querySelector("#money");
+    if (moneyEl) {
+      moneyEl.textContent = `Balance: ${balance} coins`;
+    }
+  }
+
   
   setupUIEventListeners() {
 
@@ -199,22 +206,31 @@ const HomePage = class {
       this.betPlaced = true;
       // placeBetButton.disabled = true;
     
-      this.showAlert("Bet placed successfully!");
+      // this.showAlert("Bet placed successfully!");
       
     
-      this.socket.on("bet-result", (response) => {
+      this.socket.on("bet_result", (response) => {
         console.log("✅ Bet successful!", response);
 
-        // const updatedUserBal = response.balance;
-        // localStorage.setItem("userBalance", updatedUserBal);
-        // sessionStorage.setItem("updatedUserBal", updatedUserBal);
-        // this.updateBalance(updatedUserBal);
-
+        const updatedUserBal = response.balance;
+        console.log("Balance response: ", updatedUserBal);  
+        localStorage.setItem("userBalance", updatedUserBal);
+        sessionStorage.setItem("updatedUserBal", updatedUserBal);
+        this.updateBalance(updatedUserBal);
+        
         if (response.win) {
+          const prizeAmount = response.prize;
+          let updatedUserBal = response.balance.balance;
+          console.log("User current balance:", updatedUserBal);
+          console.log("Prize Amount:", prizeAmount);
+          updatedUserBal += prizeAmount; 
+
+          
           this.showAlert(`🎉 Congratulations! You won ${response.prize} coins!\nNew balance: ${updatedUserBal}`);
           console.log(`🏆 You won ${response.prize} coins!`);
+          this.updateBalance(updatedUserBal);
         } else {
-          alert(`💔 Better luck next time!\nNew balance: ${updatedUserBal}`);
+          this.showAlert(`💔 Better luck next time!\nNew balance: ${updatedUserBal}`);
           console.log(`💔 You lost the bet.`);
         }
     
@@ -271,6 +287,8 @@ const HomePage = class {
 
     }, 0);
   }
+
+  
 
   handleGameUpdate(response) {
     if (typeof response.prizePool !== "undefined") {
@@ -383,12 +401,7 @@ const HomePage = class {
       }
   }
 
-  updateBalance(balance) {
-    const moneyEl = this.root.querySelector("#money");
-    if (moneyEl) {
-      moneyEl.textContent = `Balance: ${balance} coins`;
-    }
-  }
+  
 
   resetCards() {
     setTimeout(() => {
