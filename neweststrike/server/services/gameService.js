@@ -4,7 +4,7 @@ const isHost = process.env.PORT ? process.env.PORT === "3000" : true;
 let slaveSockets = [];
 
 let gameState = {
-    timer: 10,
+    timer: 5,
     winningNumber: null,
     gameId: null,
     prizePool: 0,

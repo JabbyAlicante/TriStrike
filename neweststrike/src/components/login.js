@@ -52,18 +52,41 @@ export default class LoginPage {
       </div>
     `;
   }
-  
+
+  async checkServerStatus() {
+    try {
+      const response = await fetch('http://localhost:3000/health');
+      if (response.ok) {
+        console.log('✅ Server is online');
+        return true;
+      } else {
+        console.warn('⚠️ Server responded with an error');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Server is offline:', error);
+      return false;
+    }
+  }
+
   setupEventListeners() {
-    this.root.querySelector(".mini-logo").addEventListener("click", () => {
+    this.root.querySelector(".mini-logo").addEventListener("click", async () => {
       console.log("🏠 Redirecting to Landing Page...");
-      LandingPage(this.root, this.socket); 
+
+      const isServerOnline = await this.checkServerStatus();
+      if (!isServerOnline) {
+        this.showAlert("🚧 Server is under maintenance. Please try again later.");
+        return;
+      }
+
+      new LandingPage({ root: this.root, socket: this.socket }); 
     });
 
     const logSignUp = this.root.querySelector(".login-text");
     if (logSignUp) {
       logSignUp.addEventListener("click", () => {
         console.log("✍️ Redirecting to Sign Up Page...");
-        LogSignUpPage(this.root, this.socket); 
+        new LogSignUpPage({ root: this.root, socket: this.socket }); 
       });
     }
 
@@ -80,17 +103,22 @@ export default class LoginPage {
           return;
         }
 
+        // Check server status before logging in
+        const isServerOnline = await this.checkServerStatus();
+        if (!isServerOnline) {
+          this.showAlert("🚧 Server is under maintenance. Please try again later.");
+          return;
+        }
+
         if (!this.socket || !this.socket.connected) {
           this.showAlert("Socket not connected. Please wait...");
           return;
         }
 
         console.log("📤 Sending login request:", { username, password });
-
         this.socket.emit("log-in", { username, password });
       });
     }
-
 
     this.socket.on("login-response", (response) => {
       console.log("📥 Received login response:", response);
@@ -120,7 +148,6 @@ export default class LoginPage {
     const token = localStorage.getItem("authToken");
     if (token) {
       console.log("🔑 Token detected:", token);
-      
     } else {
       console.log("No token found. User may need to log in.");
     }
@@ -136,6 +163,5 @@ export default class LoginPage {
       console.error("Alert elements not found in the DOM.");
     }
   }
-
 }
 

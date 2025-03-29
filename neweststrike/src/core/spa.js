@@ -11,6 +11,7 @@ class SPA {
   onDisconnect = null;
   routeGuards = {};
 
+  //-----------------------------------connect to socket----------
   async initializeSocket(serverUrl) {
     if (typeof window === 'undefined') return;
 
@@ -69,7 +70,7 @@ class SPA {
     });
     
 
-    // ✅ Handle state updates from master server
+    // Handle state updates from master server
     this.socket.on('state_update', (state) => {
       if (!this.shouldIgnoreState) {
         console.log('🔄 State update received:', state);

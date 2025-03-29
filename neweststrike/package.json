@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ENV=production node server.js",
     "build": "vite build",
-    "dev": "PORT=3000 node server/server.js & PORT=3001 node server/server.js & PORT=3002 node server/server.js ",
+    "dev": "PORT=3001 node server/server.js & PORT=3002 node server/server.js ",
     "lint": "eslint .",
     "preview": "vite preview"
   },
