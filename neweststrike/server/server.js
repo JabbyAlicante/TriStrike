@@ -180,8 +180,8 @@ async function createCustomServer() {
         console.log('🔀 Forwarding place-bet request to master');
         masterSocket.emit('place-bet', data);
 
-        masterSocket.once('bet-result', (response) => {
-          socket.emit('bet-result', response);
+        masterSocket.once('bet_result', (response) => {
+          socket.emit('bet_result', response);
         });
         return;
       }
