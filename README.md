@@ -1,5 +1,5 @@
 # ✨ TriStrike
-Tristrike is a real-time bingo-inspired gambling game built with Express, Vanilla JavaScript, and WebSockets. It follows a Single Page Application (SPA) structure, where components dynamically update without requiring a full page reload. Players place bets on a combination of three cards and try to match the winning result. The game features a countdown timer, real-time balance updates, and a virtual betting system.
+Tristrike is a real-time lotto-inspired gambling game built with Express, Vanilla JavaScript, and WebSockets. It follows a Single Page Application (SPA) structure, where components dynamically update without requiring a full page reload. Players place bets on a combination of three cards and try to match the winning result. The game features a countdown timer, real-time balance updates, and a virtual betting system.
 ## 🚀 Features
 - Real-Time Gameplay using Websockets
 - 59-second countdown per game round
