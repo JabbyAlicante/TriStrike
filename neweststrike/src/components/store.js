@@ -7,7 +7,7 @@ export default class Store {
     this.socket = socket;
 
     
-    this.updatedBalance = sessionStorage.getItem("updatedUserBal") || 0;
+    // this.updatedBalance = localStorage.getItem("userBalance") || 0;
 
     
     this.render();
@@ -16,6 +16,7 @@ export default class Store {
   }
 
   render() {
+    const updatedBalance = localStorage.getItem("userBalance") || 0;
     this.root.innerHTML = `
       <div class="body">
         <header class="header">
@@ -39,7 +40,7 @@ export default class Store {
         <!-- Coin Store Section -->
         
         <div class="store-container">
-          <div class="user-balance" id="balance-display">Balance: ${this.updatedBalance}</div>
+          <div class="user-balance" id="balance-display">Balance: ${updatedBalance}</div>
           <h1>Buy Coins</h1>
           <div class="coin-packages">
             <div class="package">
@@ -166,7 +167,7 @@ export default class Store {
       if (balanceDisplay) {
         balanceDisplay.textContent = `Balance: ${response.data.newBalance} coins`;
       }
-      alert(`✅ Purchase successful! Your new balance is ${response.newBalance} coins.`);
+      alert(`✅ Purchase successful! Your new balance is ${response.data.newBalance} coins.`);
     });
 
     // this.socket.on("purchase_failed", (response) => {
