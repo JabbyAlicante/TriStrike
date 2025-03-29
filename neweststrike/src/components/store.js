@@ -1,247 +1,197 @@
 import '../styles/store.css';
+import HomePage from './home';
 
-import HomePage from './home'
+export default class Store {
+  constructor({ root, socket }) {
+    this.root = root;
+    this.socket = socket;
 
-export default function store(root) {
+    
+    this.updatedBalance = sessionStorage.getItem("updatedUserBal") || 0;
 
-    const updatedBalance = sessionStorage.getItem("updatedUserBal");
+    
+    this.render();
+    this.setupEventListeners();
+    this.setupSocketListeners();
+  }
 
-    function updateBalance(balance) {
-        const balElement = document.querySelector(".money");
-        if (balElement) {
-            balElement.textContent = `Balance: ${balance} coins`;
-            console.log(`✅ Balance updated: ${balance} coins`);
-        } else {
-            console.error("❌ Error: Balance element not found in the DOM");
-        }
+  render() {
+    this.root.innerHTML = `
+      <div class="body">
+        <header class="header">
+          <div class="logo" id="logo-img">
+
+            <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108692/TriStrikeLogo_eycqvd.png" alt="TriStrike Logo">
+          </div>
+          <div class="info">
+            <div class="user-img" id="userProfile">
+              <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="User Profile" />
+              <div class="dropdown" id="dropdown">
+                <ul>
+                  <li id="home">Home</li>
+                  <li id="logout">Logout</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Coin Store Section -->
+        
+        <div class="store-container">
+          <div class="user-balance" id="balance-display">Balance: ${this.updatedBalance}</div>
+          <h1>Buy Coins</h1>
+          <div class="coin-packages">
+            <div class="package">
+              <div class="coin-icon">🪙</div>
+              <h2>50 Coins</h2>
+              <p>P 60.00</p>
+              <button class="buy-btn" data-amount="50" data-price="60.00">Buy</button>
+            </div>
+            <div class="package">
+              <div class="coin-icon">🪙🪙</div>
+              <h2>100 Coins</h2>
+              <p>P 150.00</p>
+              <button class="buy-btn" data-amount="100" data-price="150.00">Buy</button>
+            </div>
+            <div class="package">
+              <div class="coin-icon">🪙🪙🪙</div>
+              <h2>500 Coins</h2>
+              <p>P 360.00</p>
+              <button class="buy-btn" data-amount="500" data-price="360.00">Buy</button>
+            </div>
+            <div class="package">
+              <div class="coin-icon">🪙🪙🪙🪙</div>
+              <h2>1000 Coins</h2>
+              <p>P 800.00 <span class="bonus">+100 Bonus!</span></p>
+              <button class="buy-btn" data-amount="1000" data-price="800.00">Buy</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Modal -->
+        <div id="paymentModal" class="modal">
+          <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Select Payment Method</h2>
+            <form id="paymentForm">
+              <label>
+                <input type="radio" name="payment" value="GCash" required>
+                <span class="payment-label">GCash</span>
+              </label>
+              <label>
+                <input type="radio" name="payment" value="PayMaya" required>
+                <span class="payment-label">PayMaya</span>
+              </label>
+              <button type="submit" class="confirm-btn">Confirm Payment</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  setupEventListeners() {
+    const userProfile = this.root.querySelector("#userProfile");
+    const dropdown = this.root.querySelector("#dropdown");
+    if (userProfile && dropdown) {
+      userProfile.addEventListener("click", (event) => {
+        event.stopPropagation();
+        dropdown.classList.toggle("show");
+      });
+
+      document.addEventListener("click", () => {
+        dropdown.classList.remove("show");
+      });
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const storedBalance = localStorage.getItem("userBalance");
-        if (storedBalance !== null) {
-            updateBalance(storedBalance);
-        }
+    const logoutButton = this.root.querySelector("#logout");
+    if (logoutButton) {
+      logoutButton.addEventListener("click", () => {
+        console.log("🚪 Logging out...");
+        localStorage.removeItem("authToken");
+        window.location.href = "/";
+      });
+    }
+
+    const homeButton = this.root.querySelector("#home");
+    if (homeButton) {
+      homeButton.addEventListener("click", () => {
+        console.log("🏠 Redirecting to Home Page...");
+        new HomePage({ root: this.root, socket: this.socket });
+      });
+    }
+
+    const buyButtons = this.root.querySelectorAll(".buy-btn");
+    buyButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const amount = button.getAttribute("data-amount");
+        const price = button.getAttribute("data-price");
+        this.showPaymentModal(amount, price);
+      });
     });
 
-    root.innerHTML = `
-        <div class="body">
-            <header class="header">
-                <div class="logo" id="logo-img">
-                    <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741108692/TriStrikeLogo_eycqvd.png" alt="TriStrike Logo">
-                </div>
-                <div class="info">
-            
-
-                    <div class="user-img" id="userProfile">
-                        <img src="https://res.cloudinary.com/dkympjwqc/image/upload/v1741419016/icon_ruyyzu.png" alt="User Profile" />
-                        <div class="dropdown" id="dropdown">
-                            <ul>
-                                <li id="home">Home</li>
-                                <li id="logout">Logout</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <div class="dropdown" id="dropdown">
-                <ul>
-                    <li id="home">Home</li>
-                    <li id="logout">Logout</li>
-                </ul>
-            </div>
-
-            <!-- Coin Store Section -->
-            <div class="store-container">
-                <div class="user-balance" id="balance-display">Balance: ${updatedBalance}</div>
-                <h1>Buy Coins</h1>
-                <div class="coin-packages">
-                    <div class="package">
-                        <div class="coin-icon">🪙</div>
-                        <h2>50 Coins</h2>
-                        <p>P 60.00</p>
-                        <button class="buy-btn" onclick="showPaymentModal(50, 60.00)">Buy</button>
-                    </div>
-                    <div class="package">
-                        <div class="coin-icon">🪙🪙</div>
-                        <h2>100 Coins</h2>
-                        <p>P 150.00</p>
-                        <button class="buy-btn" onclick="showPaymentModal(100, 150.00)">Buy</button>
-                    </div>
-                    <div class="package">
-                        <div class="coin-icon">🪙🪙🪙</div>
-                        <h2>500 Coins</h2>
-                        <p>P 360.00</p>
-                        <button class="buy-btn" onclick="showPaymentModal(500, 360.00)">Buy</button>
-                    </div>
-                    <div class="package">
-                        <div class="coin-icon">🪙🪙🪙🪙</div>
-                        <h2>1000 Coins</h2>
-                        <p>P 800.00 <span class="bonus">+100 Bonus!</span></p>
-                        <button class="buy-btn" onclick="showPaymentModal(1000, 800.00)">Buy</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Payment Modal -->
-            <div id="paymentModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-btn" onclick="closeModal()">&times;</span>
-                    <h2>Select Payment Method</h2>
-                    <form id="paymentForm">
-                        <label>
-                            <input type="radio" name="payment" value="GCash" required>
-                            <span class="payment-label">GCash</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="payment" value="PayMaya" required>
-                            <span class="payment-label">PayMaya</span>
-                        </label>
-                        <button type="submit" class="confirm-btn">Confirm Payment</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `;
     
-    webSocketService.connect();
-    webSocketService.fetchLatestData();
-
-
-    // webSocketService.on("user_balance", (response) => {
-    //     console.log("📦 User balance update received:", response);
-
-    //     if (typeof response.balance !== "undefined") {
-    //         console.log(`💰 Balance update received: ${response.balance}`);
-
-    //         const balanceDisplay = document.getElementById("balance-display");
-    //         if (balanceDisplay) {
-    //             console.log("✅ Updating balance text...");
-    //             balanceDisplay.textContent = `Balance: ${response.balance} coins`;
-    //         } else {
-    //             console.error("❌ Error: Balance element not found in the DOM");
-    //         }
-    //     } else {
-    //         console.error("⚠️ Balance update failed: Invalid response structure");
-    //     }
-    // });
-
-    
-    webSocketService.on("strike_store_response", (response) => {
-        console.log("📦 Strike store response received:", response);
-    
-        if (response.success) {
-            // const balanceElement = document.getElementById('balance-display');
-            // balanceElement.textContent = `Balance: ${response.data.newBalance} coins`;
-
-            // localStorage.setItem("newBalance", response.data.newBalance);
-            // console.log("New Balance after purchasing: ", response.data.newBalance);
-
-            const newBalance = response.data.newBalance;
-        
-            
-            localStorage.setItem("userBalance", newBalance);
-            sessionStorage.setItem("updatedUserBal", newBalance);
-
-            const balanceElement = document.getElementById('balance-display');
-            if (balanceElement) {
-                balanceElement.textContent = `Balance: ${newBalance} coins`;
-            }
-
-            
-            alert(`✅ Purchase successful! Your new balance is ${response.data.newBalance} coins.`);
-        } else {
-            alert(`❌ Purchase failed: ${response.message}`);
-        }
+    const modal = this.root.querySelector("#paymentModal");
+    const closeModalButton = modal.querySelector(".close-btn");
+    closeModalButton.addEventListener("click", () => {
+      modal.style.display = "none";
     });
-    
-    
+    window.addEventListener("click", (event) => {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    });
+  }
 
-   
-    window.showPaymentModal = (amount, price) => {
-        const modal = document.getElementById('paymentModal');
-        modal.style.display = 'block';
+  setupSocketListeners() {
+    this.socket.emit("get_balance");
+    this.socket.on("balance_update", (response) => {
+      console.log("📥 Balance update received:", response);
+      if (response.balance) {
+        const balanceDisplay = this.root.querySelector("#balance-display");
+        localStorage.setItem("userBalance", response.balance);
+        sessionStorage.setItem("updatedUserBal", response.balance);
+        if (balanceDisplay) {
+          balanceDisplay.textContent = `Balance: ${response.balance} coins`;
+        }
+      }
+    });
 
+    this.socket.on("purchase_success", (response) => {
+      console.log("✅ Purchase successful:", response);
+      const balanceDisplay = this.root.querySelector("#balance-display");
+      localStorage.setItem("userBalance", response.newBalance);
+      sessionStorage.setItem("updatedUserBal", response.newBalance);
+      if (balanceDisplay) {
+        balanceDisplay.textContent = `Balance: ${response.newBalance} coins`;
+      }
+      alert(`✅ Purchase successful! Your new balance is ${response.newBalance} coins.`);
+    });
 
-        const form = document.getElementById('paymentForm');
-        form.onsubmit = (e) => {
-            e.preventDefault();
-            const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+    this.socket.on("purchase_failed", (response) => {
+      console.error("❌ Purchase failed:", response);
+      alert(`❌ Purchase failed: ${response.message}`);
+    });
+  }
 
-            const token = localStorage.getItem("authToken");
-            if (!token) {
-                alert("❌ User not authenticated!");
-                return;
-            }
+  showPaymentModal(amount, price) {
+    const modal = this.root.querySelector("#paymentModal");
+    const form = this.root.querySelector("#paymentForm");
+    modal.style.display = "block";
 
-            webSocketService.send("buy_coins", {
-                token,
-                amount,
-                paymentMethod,
-            });
-        
-            alert(`Processing purchase of ${amount} coins for P${price.toFixed(2)} using ${paymentMethod}.`);
-            closeModal();
-        };
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      const paymentMethod = form.querySelector('input[name="payment"]:checked').value;
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        alert("❌ User not authenticated!");
+        return;
+      }
+
+      console.log(`💳 Processing payment: ${amount} coins for P${price} via ${paymentMethod}`);
+      this.socket.emit("buy_coins", { token, amount, paymentMethod });
+      modal.style.display = "none";
     };
-
-    
-    
-    window.closeModal = () => {
-        const modal = document.getElementById('paymentModal');
-        modal.style.display = 'none';
-    };
-
-    
-    window.onclick = (event) => {
-        const modal = document.getElementById('paymentModal');
-        if (event.target === modal) {
-            closeModal();
-        }
-    };
-
-    setTimeout(() => {
-        const userProfile = root.querySelector('.user-img');
-        const dropdown = root.querySelector('.dropdown');
-        const logoutButton = root.querySelector('#logout');
-        const homeButton = root.querySelector('#home');
-        const logoButton = root.querySelector('#logo-img');
-
-        if (userProfile && dropdown) {
-            userProfile.addEventListener('click', (event) => {
-                event.stopPropagation();
-                dropdown.classList.toggle('show');
-            });
-
-            document.addEventListener('click', () => {
-                dropdown.classList.remove('show');
-            });
-        }
-
-        if (logoutButton) {
-            logoutButton.addEventListener('click', () => {
-                console.log('🚪 Logging out...');
-                localStorage.removeItem('authToken');
-                window.location.href = '/';
-            });
-        }
-
-        if (home) {
-            homeButton.addEventListener('click', () => {
-                console.log('Redirecting to dashboard...');
-                // window.location.href = '/home';
-                HomePage(root);
-            });
-        }
-
-        if (logoButton) {
-            logoButton.addEventListener('click', () => {
-                console.log('Removing token...');
-                localStorage.removeItem('authToken');
-                window.location.href = '/';
-            });
-        }
-
-
-    }, 0);
+  }
 }
