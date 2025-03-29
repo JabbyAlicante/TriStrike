@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 import { signupUser, loginUser, verifyToken } from './services/userService.js';
 import { startGameService, getGameState } from './services/gameService.js';
@@ -25,8 +26,14 @@ const isHost = PORT == HOST_PORT;
 
 async function createCustomServer() {
   const app = express();
+  app.use(cors());
   const server = createServer(app);
-  const io = new Server(server, { cors: { origin: '*' } });
+  const io = new Server(server, {
+    cors: {
+      origin: '*', 
+      methods: ['GET', 'POST'],
+    }
+  });
 
   //----------------checking 3000 status-----------------
   app.get('/health', (req, res) => {
