@@ -69,6 +69,23 @@ class SPA {
       }
     });
     
+    this.socket.on('bet-result', (response) => {
+      console.log('🎯 Bet response:', response);
+      
+      if (response.success) {
+        if (response.win) {
+          console.log(`🏆 You won! Prize: ${response.prize} coins`);
+          alert(`Congratulations! You won ${response.prize} coins!`);
+        } else {
+          console.log(`💔 Bet LOST. Better luck next time.`);
+          alert('Better luck next time!');
+        }
+      } else {
+        console.error(`⚠️ Bet failed: ${response.message}`);
+        alert(`Bet failed: ${response.message}`);
+      }
+    });
+    
 
     // Handle state updates from master server
     this.socket.on('state_update', (state) => {

@@ -74,7 +74,7 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
                 [gameId]
             );
 
-            socket.emit("bet_success", {
+            socket.emit("bet_result", {
                 success: true,
                 code: "BET_WON",
                 message: `Congratulations! You won ${rewardAmount} coins!`,
@@ -86,7 +86,7 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
         } else {
             console.log(`💔 Bet LOST. Better luck next time!`);
 
-            socket.emit("bet_success", {
+            socket.emit("bet_result", {
                 success: true,
                 code: "BET_LOST",
                 message: "Better luck next time!",
