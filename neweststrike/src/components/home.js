@@ -46,7 +46,8 @@ const HomePage = class {
     const token = localStorage.getItem("authToken");
     if (!token) {
       console.error("❌ No authentication token found. Redirecting to login...");
-      window.location.href = "/login";
+      // window.location.href = "/login";
+      window.location.href = '/';
     } else {
       console.log("🔑 Token verified:", token);
     }
@@ -57,14 +58,14 @@ const HomePage = class {
       console.warn("⚠️ Socket not connected");
     }
     this.socket.on("state_update", this.handleGameUpdate.bind(this));
-    this.socket.on('balance-update', (data) => {
-      console.log('📥 Balance updated:', data);
-      if (data && typeof data.balance !== 'undefined') {
-          console.log(`💰 New user balance: ${data.balance}`);
-          localStorage.setItem('userBalance', data.balance);
-          updateBalance(data.balance);
-      }
-    });
+    // this.socket.on('balance-update', (data) => {
+    //   console.log('📥 Balance updated:', data);
+    //   if (data && typeof data.balance !== 'undefined') {
+    //       console.log(`💰 New user balance: ${data.balance}`);
+    //       localStorage.setItem('userBalance', data.balance);
+    //       updateBalance(data.balance);
+    //   }
+    // });
     
     this.socket.on("connect", () => {
       console.log("✅ Socket reconnected on HomePage. Re-authenticating...");
@@ -133,6 +134,9 @@ const HomePage = class {
           <div class="card-grid">
             ${cardsHTML}
           </div>
+          <div id="alertMessage" class="alert">
+              <p id="alertText"></p>
+          </div>
         </section>
 
         <div class="bottom-nav">
@@ -156,11 +160,11 @@ const HomePage = class {
     const placeBetButton = this.root.querySelector("#place-bet-btn");
     
     placeBetButton.addEventListener("click", () => {
-      if (this.betPlaced) {
-        console.error("❌ Bet already placed!");
-        alert("⚠️ You have already placed a bet for this round! Please wait for the next round.");
-        return;
-      }
+      // if (this.betPlaced) {
+      //   console.error("❌ Bet already placed!");
+      //   alert("⚠️ You have already placed a bet for this round! Please wait for the next round.");
+      //   return;
+      // }
     
       if (this.flippedCards.length !== 3) {
         console.error("❌ You must select exactly 3 cards to place a bet.");
@@ -193,25 +197,26 @@ const HomePage = class {
     
       this.socket.emit("place-bet", { gameId, chosenNumbers, betAmount, token });
       this.betPlaced = true;
-      placeBetButton.disabled = true;
+      // placeBetButton.disabled = true;
     
-      alert("✅ Bet placed successfully!");
+      this.showAlert("Bet placed successfully!");
+      
     
-      this.socket.on("bet_result", (response) => {
+      this.socket.on("bet-result", (response) => {
         console.log("✅ Bet successful!", response);
 
-        const updatedUserBal = response.balance;
-        localStorage.setItem("userBalance", updatedUserBal);
-        sessionStorage.setItem("updatedUserBal", updatedUserBal);
-        this.updateBalance(updatedUserBal);
+        // const updatedUserBal = response.balance;
+        // localStorage.setItem("userBalance", updatedUserBal);
+        // sessionStorage.setItem("updatedUserBal", updatedUserBal);
+        // this.updateBalance(updatedUserBal);
 
         if (response.win) {
-          alert(`🎉 Congratulations! You won ${response.prize} coins!\nNew balance: ${updatedUserBal}`);
+          this.showAlert(`🎉 Congratulations! You won ${response.prize} coins!\nNew balance: ${updatedUserBal}`);
           console.log(`🏆 You won ${response.prize} coins!`);
         } else {
           alert(`💔 Better luck next time!\nNew balance: ${updatedUserBal}`);
           console.log(`💔 You lost the bet.`);
-    }
+        }
     
         if (token) {
           this.socket.emit("get-balance", { token });
@@ -258,7 +263,8 @@ const HomePage = class {
             coinButton.addEventListener('click', () => {
                 console.log('Redirecting to dashboard...');
                 // window.location.href = '/store';
-                store(root);
+                // store(root);
+                new store({ root: this.root, socket: this.socket });
             });
         }
 
@@ -268,13 +274,14 @@ const HomePage = class {
 
   handleGameUpdate(response) {
     if (typeof response.prizePool !== "undefined") {
-        console.log(`🏆 Prize pool update received: ${response.prizePool}`);
+        // console.log(`🏆 Prize pool update received: ${response.prizePool}`);
         const prizePoolElement = this.root.querySelector(".prize-pool .prize");
         if (prizePoolElement) {
           prizePoolElement.textContent = `${response.prizePool} coins`;
-        } else {
-          console.error("❌ Prize pool element not found in the DOM");
-        }
+        } 
+        // else {
+        //   console.error("❌ Prize pool element not found in the DOM");
+        // }
       } else {
         console.error("⚠️ Prize pool update failed: Invalid response structure");
       }
@@ -284,7 +291,7 @@ const HomePage = class {
         setTimeout(() => {
           const timerElement = this.root.querySelector("#timer");
           if (!timerElement) {
-            console.error("❌ Timer element not found in the DOM");
+            // console.error("❌ Timer element not found in the DOM");
             return;
           }
           const minutes = Math.floor(response.timer / 60);
@@ -297,7 +304,7 @@ const HomePage = class {
   
       
       if (response.winningNumber) {
-        console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
+        // console.log(`🎰 Winning Number update received: ${response.winningNumber}`);
         const winningDigits = String(response.winningNumber).split('-').map(Number);
         const headerCards = this.root.querySelector('.header .logo .cards');
         if (headerCards) {
@@ -314,9 +321,10 @@ const HomePage = class {
               headerCards.appendChild(img);
             }
           });
-        } else {
-          console.error("❌ Winner display area not found in the DOM");
-        }
+        } 
+        // else {
+        //   console.error("❌ Winner display area not found in the DOM");
+        // }
   
         
         const chosenNumbers = [];
@@ -397,6 +405,22 @@ const HomePage = class {
         placeBetButton.disabled = false;
       }
     }, 500);
+  }
+
+  showAlert(message) {
+    const alertText = this.root.querySelector("#alertText");
+    const alertMessage = this.root.querySelector("#alertMessage");
+    if (alertText && alertMessage) {
+      alertText.textContent = message;
+      alertMessage.style.display = "block";
+  
+      
+      alertMessage.addEventListener("click", () => {
+        alertMessage.style.display = "none";
+      }, { once: true });
+    } else {
+      console.error("Alert elements not found in the DOM.");
+    }
   }
 };
 
