@@ -158,21 +158,21 @@ export default class Store {
       }
     });
 
-    this.socket.on("purchase_success", (response) => {
+    this.socket.on("strike_store_response", (response) => {
       console.log("✅ Purchase successful:", response);
       const balanceDisplay = this.root.querySelector("#balance-display");
-      localStorage.setItem("userBalance", response.newBalance);
-      sessionStorage.setItem("updatedUserBal", response.newBalance);
+      localStorage.setItem("userBalance", response.data.newBalance);
+      sessionStorage.setItem("updatedUserBal", response.data.newBalance);
       if (balanceDisplay) {
-        balanceDisplay.textContent = `Balance: ${response.newBalance} coins`;
+        balanceDisplay.textContent = `Balance: ${response.data.newBalance} coins`;
       }
       alert(`✅ Purchase successful! Your new balance is ${response.newBalance} coins.`);
     });
 
-    this.socket.on("purchase_failed", (response) => {
-      console.error("❌ Purchase failed:", response);
-      alert(`❌ Purchase failed: ${response.message}`);
-    });
+    // this.socket.on("purchase_failed", (response) => {
+    //   console.error("❌ Purchase failed:", response);
+    //   alert(`❌ Purchase failed: ${response.message}`);
+    // });
   }
 
   showPaymentModal(amount, price) {
