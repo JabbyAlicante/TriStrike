@@ -1,0 +1,221 @@
+import fs from 'node:fs';
+import { Server } from 'socket.io';
+import { io as Client } from 'socket.io-client';
+import path from 'node:path';
+import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
+import express from 'express';
+import { createServer as createViteServer } from 'vite';
+import dotenv from 'dotenv';
+import cors from 'cors';
+
+import { signupUser, loginUser, verifyToken } from './services/userService.js';
+import { startGameService, getGameState } from './services/gameService.js';
+import { placeBet } from './services/betsService.js';
+import { strikeStore } from './services/store.js';
+import { getBalance } from './services/balanceService.js';
+
+dotenv.config();
+
+const IS_PRODUCTION = process.env.ENV === 'production';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const HOST_PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const isHost = PORT == HOST_PORT;
+
+async function createCustomServer() {
+  const app = express();
+  app.use(cors());
+  const server = createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: '*', 
+      methods: ['GET', 'POST'],
+    }
+  });
+
+  //----------------checking 3000 status-----------------
+  app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'online' });
+  });
+  
+
+  let vite;
+  let masterSocket = null;
+  let stateSocket = null;
+
+  if (IS_PRODUCTION) {
+    app.use(express.static(path.resolve(__dirname, './dist/client/')));
+  } else {
+    vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'custom',
+    });
+    app.use(vite.middlewares);
+  }
+
+  app.use('*', async (req, res, next) => {
+    try {
+      const indexPath = path.resolve(
+        __dirname,
+        IS_PRODUCTION ? '../dist/index.html' : '../src/index.html'
+      );
+      res.sendFile(indexPath);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  server.listen(PORT, async () => {
+    console.log(`🚀 Server running at http://app1:${PORT}`);
+
+    if (isHost) {
+      try {
+        startGameService(io);
+        console.log('✅ Master game service started successfully.');
+
+        setInterval(() => {
+          const gameState = getGameState();
+          io.emit('state_update', gameState);
+        }, 1000);
+
+      } catch (err) {
+        console.error('❌ Error starting game service:', err);
+      }
+    } else {
+
+      masterSocket = Client(`http://app1:${HOST_PORT}`, {
+        transports: ['websocket'],
+      });
+
+      masterSocket.on('connect', () => {
+        console.log('✅ Connected to master server (WebSocket)');
+      });
+
+      masterSocket.on('disconnect', () => {
+        console.log('❌ Disconnected from master server');
+      });
+
+      stateSocket = Client(`http://localhost:${HOST_PORT}`, {
+        transports: ['polling'],
+      });
+
+      stateSocket.on('connect', () => {
+        console.log('✅ Connected to master server for polling');
+      });
+
+      stateSocket.on('state_update', (state) => {
+        console.log('🔄 State update received from master:', state);
+        io.emit('state_update', state);
+      });
+
+      stateSocket.on('disconnect', () => {
+        console.log('❌ Disconnected from master (polling)');
+      });
+    }
+  });
+
+  io.on('connection', (socket) => {
+    console.log(`✅ User connected: ${socket.id}`);
+
+    socket.emit('welcome', 'A message from the server');
+
+    // ---------------------- SIGN-UP ----------------------
+    socket.on('sign-up', async (data) => {
+      if (!isHost) {
+        console.log('🔀 Forwarding sign-up request to master');
+        masterSocket.emit('sign-up', data);
+
+        masterSocket.once('signup-response', (response) => {
+          socket.emit('signup-response', response);
+        });
+        return;
+      }
+
+      const { username, email, password } = data;
+      await signupUser(socket, username, email, password);
+    });
+
+    // ---------------------- LOG-IN ----------------------
+    socket.on('log-in', async (data) => {
+      if (!isHost) {
+        console.log('🔀 Forwarding log-in request to master');
+        masterSocket.emit('log-in', data);
+
+        masterSocket.once('login-response', (response) => {
+          socket.emit('login-response', response);
+        });
+        return;
+      }
+
+      const { username, password } = data;
+      await loginUser(socket, username, password);
+    });
+
+    // --------------------- BALANCE -------------------------
+
+    socket.on('user-balance', async (data) => {
+      if (!isHost) {
+        console.log('Forwarding user balance request to master');
+        masterSocket.emit('user-balance', data);
+    
+        masterSocket.once('balance-response', (response) => {
+          console.log('⬅️ Received balance response from master');
+          socket.emit('balance-response', response);
+          io.emit('balance-update', { balance: response.balance });
+        });
+        return;
+      }
+    
+      const balance = await getBalance(data.userId);
+      socket.emit('balance-response', { balance });
+      io.emit('balance-update', { balance });
+    });
+    
+
+    // ---------------------- PLACE BET ----------------------
+    socket.on('place-bet', async (data) => {
+      if (!isHost) {
+        console.log('🔀 Forwarding place-bet request to master');
+        masterSocket.emit('place-bet', data);
+
+        masterSocket.once('bet_result', (response) => {
+          socket.emit('bet_result', response);
+        });
+        return;
+      }
+
+      const { token, gameId, chosenNumbers, betAmount } = data;
+      const { success, user } = await verifyToken(token);
+      if (!success) {
+        socket.emit('bet-result', { success: false, message: 'Invalid token.' });
+        return;
+      }
+
+      await placeBet(socket, gameId, chosenNumbers, betAmount, user);
+    });
+
+    // ---------------------- BUY COINS ----------------------
+    socket.on('buy_coins', async (data) => {
+      if (!isHost) {
+        console.log('🔀 Forwarding buy_coins request to master');
+        masterSocket.emit('buy_coins', data);
+
+        masterSocket.once('strike_store_response', (response) => {
+          socket.emit('strike_store_response', response);
+        });
+        return;
+      }
+
+      const { token, amount } = data;
+      await strikeStore(socket, token, amount);
+    });
+
+    socket.on('disconnect', () => {
+      console.log(`❌ User disconnected: ${socket.id}`);
+    });
+  });
+}
+
+createCustomServer();

@@ -1,0 +1,96 @@
+services:
+  app1:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    expose:
+      - 3000
+      # - 5001
+    environment:
+      - APPNAME=app1
+      - DB_HOST=host.docker.internal
+      - DB_USER=jabby    
+      - DB_PASS=jab123
+    ports:
+      - 3001:3000
+      # - 3002:3001
+      # - 3003:3002
+    networks:
+      - default
+
+  app2:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    expose:
+      - 3000
+      # - 5001
+    environment:
+      - APPNAME=app2
+      - DB_HOST=host.docker.internal
+      - DB_USER=jabby    
+      - DB_PASS=jab123
+    ports:
+      # - 3001:3000
+      - 3002:3001
+      # - 3003:3002
+    networks:
+      - default
+
+  loadbalancer:
+    build: ./haproxy
+    expose:
+      - 3000
+      # - 5001
+    ports:
+      - 3000:80
+    depends_on:
+      - app1
+      - app2
+    networks:
+      - default
+
+  mysql_master:
+    image: mariadb:10.3
+    env_file:
+      - ./master/mysql_master.env
+    container_name: "mysql_master"
+    restart: "no"
+    ports:
+      - 4406:3306
+    depends_on:
+      # - mysql_master
+      - loadbalancer
+  
+    volumes:
+      - ./master/conf/mysql.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+      - mysql_data_master:/var/lib/mysql
+      - ./db:/db
+    networks:
+      - default
+
+  mysql_slave:
+    image: mariadb:10.3
+    env_file:
+      - ./slave/mysql_slave.env
+    container_name: "mysql_slave"
+    restart: "no"
+    ports:
+      - 5506:3306
+    depends_on:
+      - mysql_master
+      - loadbalancer
+    volumes:
+      - ./slave/conf/mysql.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+      - mysql_data_slave:/var/lib/mysql
+      - ./db:/db
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  mysql_data_master: {}
+  mysql_data_slave: {}

@@ -1,0 +1,8 @@
+# Ignore MySQL Docker volumes
+strikereplication/**/data/
+replication_haproxy/**/data/
+*.pid
+*.sock
+*.err
+*.log
+*.cnf
