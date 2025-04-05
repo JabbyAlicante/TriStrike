@@ -76,7 +76,7 @@ function broadcastGameState(io){
     });
 }
 
-export function startGameService(io) {
+export function startGameService(io, isHost) {
     if (!isHost) return;
 
     setInterval(async () => {

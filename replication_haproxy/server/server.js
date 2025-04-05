@@ -24,6 +24,7 @@ const HOST_PORT = 3000;
 const PORT = process.env.PORT || 3000;
 const isHost = PORT == HOST_PORT;
 
+
 async function createCustomServer() {
   const app = express();
   app.use(cors());
@@ -67,13 +68,21 @@ async function createCustomServer() {
     }
   });
 
+  if (isHost) {
+    console.log('🧠 This is the MASTER instance.');
+  } else {
+    console.log('📡 This is a REPLICA instance.');
+  }  
+
   server.listen(PORT, async () => {
     console.log(`🚀 Server running at http://app1:${PORT}`);
 
     if (isHost) {
       try {
-        startGameService(io);
+        startGameService(io, isHost);
         console.log('✅ Master game service started successfully.');
+        console.log('🧠 startGameService() running on host:', isHost);
+
 
         setInterval(() => {
           const gameState = getGameState();
@@ -97,7 +106,7 @@ async function createCustomServer() {
         console.log('❌ Disconnected from master server');
       });
 
-      stateSocket = Client(`http://localhost:${HOST_PORT}`, {
+      stateSocket = Client(`http://app1:${HOST_PORT}`, {
         transports: ['polling'],
       });
 
