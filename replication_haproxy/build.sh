@@ -39,4 +39,4 @@ echo "$start_slave_cmd"
 docker exec mysql_slave sh -c "$start_slave_cmd"
 
 docker exec mysql_slave sh -c "export MYSQL_PWD=111; mysql -u root -e 'SHOW SLAVE STATUS \G'"
-docker exec mysql_master sh -c "export MYSQL_PWD=111; mysql -u root tristrike_1 < /db/tristrike_1.sql"
+docker exec mysql_master sh -c "export MYSQL_PWD=111; mysql -u root mydb < /db/mydb.sql"

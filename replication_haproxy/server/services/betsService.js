@@ -1,4 +1,4 @@
-import db from "../config/db.js";
+import {slavedb, masterdb} from "../config/db.js";
 import { deductBalance, addPrizeToWinner } from "./balanceService.js";
 import { getTotalPrizePool } from "./prizeService.js";
 
@@ -29,7 +29,7 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
             });
         }
 
-        const [[game]] = await db.query(
+        const [[game]] = await slavedb.query(
             `SELECT id, winning_num, prize_pool FROM games WHERE id = ? AND status = 'ongoing'`,
             [gameId]
         );
@@ -48,7 +48,7 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
         const newBalance = await deductBalance(userId, betAmount);
         console.log(`💰 Balance deducted. New balance for User ${userId}: ${newBalance}`);
 
-        await db.query(
+        await masterdb.query(
             `INSERT INTO bets (user_id, game_id, chosen_nums, amount) VALUES (?, ?, ?, ?)`,
             [userId, gameId, chosenNumsString, betAmount]
         );
@@ -69,7 +69,7 @@ export async function placeBet(socket, gameId, chosenNumbers, betAmount, user) {
 
             console.log(`🏆 Bet WON! Reward: ${rewardAmount} coins`);
 
-            await db.query(
+            await masterdb.query(
                 `UPDATE games SET prize_pool = 80 WHERE id = ?`,
                 [gameId]
             );

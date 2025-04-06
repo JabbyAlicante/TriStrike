@@ -1,4 +1,4 @@
-import db from "../config/db.js";
+import {slavedb, masterdb} from "../config/db.js";
 
 export async function getTotalPrizePool(io, gameId) {
     if (!io) {
@@ -17,7 +17,7 @@ export async function getTotalPrizePool(io, gameId) {
     }
 
     try {
-        const [results] = await db.query(
+        const [results] = await slavedb.query(
             "SELECT SUM(amount) AS totalPrizePool FROM bets WHERE game_id = ?",
             [gameId]
         );
@@ -63,7 +63,7 @@ export async function getTotalPrizePool(io, gameId) {
 
 export async function updatePrizePoolInGame(gameId, prizePool) {
     try {
-        await db.query(
+        await masterdb.query(
             `UPDATE games SET prize_pool = ? WHERE id = ?`,
             [prizePool, gameId]
         );

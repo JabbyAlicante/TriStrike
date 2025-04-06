@@ -62,7 +62,7 @@ export default class LoginPage {
 
   async checkServerStatus() {
     try {
-      const response = await fetch('http://localhost:3000/health');
+      const response = await fetch('http://localhost:3001/health');
       if (response.ok) {
         console.log('✅ Server is online');
         return true;

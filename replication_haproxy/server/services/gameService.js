@@ -1,4 +1,4 @@
-import db from "../config/db.js";
+import {slavedb, masterdb} from "../config/db.js";
 
 const isHost = process.env.PORT ? process.env.PORT === "3000" : true;
 let slaveSockets = [];
@@ -25,7 +25,7 @@ export async function removeSlave(socket) {
 
 export async function initializeGameState(io) {
     try {
-        const [results] = await db.query(
+        const [results] = await slavedb.query(
             `SELECT id, winning_num, prize_pool, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS elapsed 
             FROM games WHERE status = 'ongoing' ORDER BY id DESC LIMIT 1`
         );
@@ -113,9 +113,9 @@ async function createNewGame(io) {
         gameState.timer = 59;
         gameState.winningNumber = generateWinningNumber();
 
-        await db.query(`UPDATE games SET status = 'finished' WHERE status = 'ongoing'`);
+        await masterdb.query(`UPDATE games SET status = 'finished' WHERE status = 'ongoing'`);
 
-        const [result] = await db.query(
+        const [result] = await masterdb.query(
             `INSERT INTO games (winning_num, prize_pool, status, created_at) VALUES (?, 20, 'ongoing', NOW())`,
             [gameState.winningNumber]
         );
@@ -160,7 +160,7 @@ async function carryOverPrizePool(io) {
     if (!isHost) return;
     
     try {
-        const [previousGame] = await db.query(
+        const [previousGame] = await slavedb.query(
             `SELECT id, prize_pool FROM games WHERE status = 'finished' ORDER BY id DESC LIMIT 1`
         );
 
@@ -168,7 +168,7 @@ async function carryOverPrizePool(io) {
             const previousPrizePool = previousGame[0].prize_pool;
 
             if (previousPrizePool > 0) {
-                await db.query(
+                await masterdb.query(
                     `UPDATE games SET prize_pool = prize_pool + ? WHERE id = ?`,
                     [previousPrizePool, gameState.gameId]
                 );

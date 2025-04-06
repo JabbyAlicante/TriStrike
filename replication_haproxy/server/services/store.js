@@ -1,6 +1,6 @@
 import { getBalance, getUserInfo } from "./balanceService.js";
 import { verifyToken } from "./userService.js";
-import db from "../config/db.js";
+import {slavedb, masterdb} from "../config/db.js";
 
 export async function strikeStore(socket, token, amount) {
     if (!token || !amount) {
@@ -26,7 +26,7 @@ export async function strikeStore(socket, token, amount) {
 
         const userId = user.id;
 
-        const [result] = await db.query(
+        const [result] = await masterdb.query(
             "UPDATE users SET balance = balance + ? WHERE id = ?",
             [amount, userId]
         );

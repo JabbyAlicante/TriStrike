@@ -1,2 +1,0 @@
-# Ignore MySQL data volumes completely
-strikereplication/**/data/

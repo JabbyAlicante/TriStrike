@@ -1,10 +1,10 @@
-import db from "../config/db.js";
+import {slavedb, masterdb} from "../config/db.js";
 
 export async function getUserBalance(userId, socket) {
     console.log(`💰 Fetching balance for User ID: ${userId}`);
 
     try {
-        const [results] = await db.query(
+        const [results] = await slavedb.query(
             `SELECT id, username, balance FROM users WHERE id = ?`,
             [userId]
         );
@@ -41,7 +41,7 @@ export async function deductBalance(userId, amount) {
 
     let connection;
     try {
-        connection = await db.getConnection();
+        connection = await slavedb.getConnection();
         await connection.beginTransaction();
 
         const [results] = await connection.query(
@@ -86,7 +86,7 @@ export async function addPrizeToWinner(userId, prizeAmount) {
 
     let connection;
     try {
-        connection = await db.getConnection();
+        connection = await masterdb.getConnection();
         await connection.beginTransaction();
 
         await connection.query(
@@ -124,7 +124,7 @@ export async function addPrizeToWinner(userId, prizeAmount) {
 export async function getBalance(userId) {
     let connection;
     try {
-        connection = await db.getConnection();
+        connection = await slavedb.getConnection();
 
         const [results] = await connection.query(
             `SELECT balance FROM users WHERE id = ?`,
@@ -144,7 +144,7 @@ export async function getBalance(userId) {
 export async function getUserInfo(userId) {
     let connection;
     try {
-        connection = await db.getConnection();
+        connection = await slavedb.getConnection();
 
         const [results] = await connection.query(
             `SELECT id, username FROM users WHERE id = ?`,

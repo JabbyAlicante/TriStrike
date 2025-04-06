@@ -1,4 +1,4 @@
-import db from "../config/db.js";
+import {slavedb, masterdb} from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -31,7 +31,7 @@ export const signupUser = async (socket, username, email, password) => {
     console.log(`📩 Signup request received - Username: ${username}, Email: ${email}`);
 
     try {
-        const [existingUsers] = await db.query(
+        const [existingUsers] = await masterdb.query(
             "SELECT id FROM users WHERE username = ? OR email = ?",
             [username, email]
         );
@@ -49,7 +49,7 @@ export const signupUser = async (socket, username, email, password) => {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         console.log("📝 Inserting new user into database...");
-        const [results] = await db.query(
+        const [results] = await masterdb.query(
             "INSERT INTO users (username, email, pass_hash, balance) VALUES (?, ?, ?, 100)",
             [username, email, hashedPassword]
         );
@@ -57,7 +57,7 @@ export const signupUser = async (socket, username, email, password) => {
 
         const userId = results.insertId;
         console.log("🔎 Fetching newly created user...");
-        const [user] = await db.query(
+        const [user] = await slavedb.query(
             "SELECT id, username, balance, created_at, last_login FROM users WHERE id = ?",
             [userId]
         );
@@ -84,7 +84,7 @@ export const loginUser = async (socket, username, password) => {
 
     try {
         console.log("🔎 Checking user in database...");
-        const [results] = await db.query(
+        const [results] = await slavedb.query(
             "SELECT id, username, pass_hash, balance, created_at FROM users WHERE username = ?",
             [username]
         );
